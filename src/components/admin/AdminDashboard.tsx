@@ -1507,7 +1507,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
         )}
 
-        <ServicesAdminSection activeTab={activeTab} />
+        <<ServicesAdminSection activeTab={activeTab} />
 
         <HomeDashboardAdminSection activeTab={activeTab} />
           
