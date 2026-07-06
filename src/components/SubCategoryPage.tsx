@@ -6,7 +6,6 @@ import { MenuCard } from './MenuCard'
 import { StaggeredGrid } from './animations/StaggeredGrid'
 import { ShimmerSkeleton } from './animations/ShimmerSkeleton'
 import { useLanguage } from '../contexts/LanguageContext'
-import { useScrollHighlight } from '../hooks/useScrollHighlight'
 
 interface SubCategoryPageProps {
   category: MenuCategory | null
@@ -17,7 +16,6 @@ interface SubCategoryPageProps {
   onItemClick: (item: MenuItem) => void
   onAddToCart: (item: CartItem) => void
   onToggleFavorite: (itemId: string) => void
-  highlightItemId?: string | null
 }
 
 export const SubCategoryPage: React.FC<SubCategoryPageProps> = ({
@@ -29,12 +27,8 @@ export const SubCategoryPage: React.FC<SubCategoryPageProps> = ({
   onItemClick,
   onAddToCart,
   onToggleFavorite,
-  highlightItemId = null,
 }) => {
   const { t } = useLanguage()
-
-  // Scrolls to + briefly highlights the item matched by Home's universal search
-  useScrollHighlight('menu-item', highlightItemId)
 
   const displayItems = subCategory
     ? items.filter(i => i.subCategory === subCategory)
@@ -122,14 +116,13 @@ export const SubCategoryPage: React.FC<SubCategoryPageProps> = ({
           <div className="px-4 pt-4">
             <StaggeredGrid gridKey={gridKey} columns={2} gap={3}>
               {displayItems.map(item => (
-                <div key={item.id} id={`menu-item-${item.id}`}>
-                  <MenuCard
-                    item={item}
-                    onAddToCart={onAddToCart}
-                    onItemClick={onItemClick}
-                    onToggleFavorite={onToggleFavorite}
-                  />
-                </div>
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  onAddToCart={onAddToCart}
+                  onItemClick={onItemClick}
+                  onToggleFavorite={onToggleFavorite}
+                />
               ))}
             </StaggeredGrid>
           </div>

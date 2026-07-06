@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { CategoryNav } from './CategoryNav'
 import { StaggeredGrid } from './animations/StaggeredGrid'
+import { ShimmerSkeleton } from './animations/ShimmerSkeleton'
+import { PageWrapper } from './animations/PageTransition'
 import { ServiceCard } from './ServiceCard'
 import { ServiceDetailModal } from './ServiceDetailModal'
 import { ServiceRequestForm } from './ServiceRequestForm'
@@ -9,19 +11,13 @@ import { MenuCategory } from '../types/menu'
 import { serviceActionLabelKeys } from '../data/serviceData'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
 import { useLanguage } from '../contexts/LanguageContext'
-import { useScrollHighlight } from '../hooks/useScrollHighlight'
+import { useShimmerTimer } from '../hooks/useShimmerTimer'
 
 interface ServicesPageProps {
   onCategoryTransition?: () => void
-  initialCategoryId?: string | null
-  highlightServiceId?: string | null
 }
 
-export const ServicesPage: React.FC<ServicesPageProps> = ({
-  onCategoryTransition,
-  initialCategoryId = null,
-  highlightServiceId = null,
-}) => {
+export const ServicesPage: React.FC<ServicesPageProps> = ({ onCategoryTransition }) => {
   const { t } = useLanguage()
   const [fields, setFields] = useState<MenuCategory[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
@@ -32,8 +28,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
   const [requestItem, setRequestItem] = useState<ServiceItem | null>(null)
   const [isRequestFormOpen, setIsRequestFormOpen] = useState(false)
 
-  // Scrolls to + briefly highlights the service matched by Home's universal search
-  useScrollHighlight('service-item', highlightServiceId)
+  const shimmerReady = useShimmerTimer(activeCategory || 'services-initial')
 
   useEffect(() => {
     (async () => {
@@ -49,13 +44,6 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
     })()
   }, [])
 
-  // If Home's search sends us here with a specific category in mind, jump to it
-  useEffect(() => {
-    if (initialCategoryId) {
-      setActiveCategory(initialCategoryId)
-    }
-  }, [initialCategoryId])
-
   const getActionLabel = (categoryId: string) => {
     const key = serviceActionLabelKeys[categoryId]
     return key ? t[key] : t.actionRequest
@@ -64,6 +52,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
   const filteredItems = services.filter(item => item.categoryId === activeCategory)
   const actionLabel = getActionLabel(activeCategory)
 
+  // ── Category switch — mirrors the Menu page's category transition ────
   const handleCategoryChange = (categoryId: string) => {
     if (categoryId === activeCategory) return
     onCategoryTransition?.()
@@ -80,36 +69,44 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
     setIsRequestFormOpen(true)
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div>
-      <CategoryNav
-        categories={fields}
-        activeCategory={activeCategory}
-        onCategoryChange={handleCategoryChange}
-      />
+      {!loading && (
+        <CategoryNav
+          categories={fields}
+          activeCategory={activeCategory}
+          onCategoryChange={handleCategoryChange}
+        />
+      )}
 
-      <div className="px-4 pt-4 pb-28">
-        <StaggeredGrid gridKey={activeCategory} columns={2} gap={3}>
-          {filteredItems.map(item => (
-            <div key={item.id} id={`service-item-${item.id}`}>
-              <ServiceCard
-                item={item}
-                actionLabel={actionLabel}
-                onCardClick={handleCardClick}
-                onActionClick={openRequestForm}
-              />
+      <PageWrapper pageKey={`services-${activeCategory}`}>
+        <div>
+          {(!shimmerReady || loading) ? (
+            <ShimmerSkeleton count={8} />
+          ) : filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4">
+              <span className="text-6xl mb-5">🛎️</span>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center font-medium">
+                {t.noItems}
+              </p>
             </div>
-          ))}
-        </StaggeredGrid>
-      </div>
+          ) : (
+            <div className="px-4 pt-4 pb-28">
+              <StaggeredGrid gridKey={activeCategory} columns={2} gap={3}>
+                {filteredItems.map(item => (
+                  <ServiceCard
+                    key={item.id}
+                    item={item}
+                    actionLabel={actionLabel}
+                    onCardClick={handleCardClick}
+                    onActionClick={openRequestForm}
+                  />
+                ))}
+              </StaggeredGrid>
+            </div>
+          )}
+        </div>
+      </PageWrapper>
 
       <ServiceDetailModal
         item={selectedService}
