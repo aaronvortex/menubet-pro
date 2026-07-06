@@ -15,6 +15,14 @@ export const serviceActionLabels: Record<string, string> = {
   maintenance: 'Report',
 }
 
+// Maps a service category to the translation key used for its action button
+export const serviceActionLabelKeys: Record<string, 'actionOrder' | 'actionRequest' | 'actionBook' | 'actionReport'> = {
+  laundry: 'actionOrder',
+  housekeeping: 'actionRequest',
+  spa: 'actionBook',
+  maintenance: 'actionReport',
+}
+
 export const serviceCategoryStyles: Record<string, { gradient: string }> = {
   laundry: { gradient: 'from-cyan-400 to-blue-600' },
   housekeeping: { gradient: 'from-violet-400 to-purple-600' },
