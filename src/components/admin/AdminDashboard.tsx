@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, UtensilsCrossed, ClipboardList, Settings, LogOut, Plus, CreditCard as Edit2, Trash2, X, Check, AlertCircle, Save, RefreshCw, Clock, CheckCircle, XCircle, Eye, Hotel, Phone, MapPin, Image as ImageIcon, ToggleLeft, ToggleRight, BarChart2, TrendingUp, ShoppingBag, DollarSign, Package, Star, ArrowUp, ArrowDown, Minus, Calendar, Activity, TrendingDown, Heart, Layers, ConciergeBell, Inbox } from 'lucide-react'
+import { LayoutGrid, UtensilsCrossed, ClipboardList, Settings, LogOut, Home, Plus, CreditCard as Edit2, Trash2, X, Check, AlertCircle, Save, RefreshCw, Clock, CheckCircle, XCircle, Eye, Hotel, Phone, MapPin, Image as ImageIcon, ToggleLeft, ToggleRight, BarChart2, TrendingUp, ShoppingBag, DollarSign, Package, Star, ArrowUp, ArrowDown, Minus, Calendar, Activity, TrendingDown, Heart, Layers, ConciergeBell, Inbox } from 'lucide-react'
 import { useAdmin } from '../../contexts/AdminContext'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useHotelSettings } from '../../contexts/HotelSettingsContext'
@@ -25,12 +25,12 @@ import {
 import { MenuCategory, MenuItem, Order, HotelSettings } from '../../types/menu'
 import { AnalyticsCardSkeleton, AdminListSkeleton } from '../animations/ShimmerSkeleton'
 import { ServicesAdminSection } from './ServicesAdminSection'
-
+import { HomeDashboardAdminSection } from './HomeDashboardAdminSection'
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = 'analytics' | 'categories' | 'items' | 'serviceFields' | 'services' | 'serviceRequests' | 'orders' | 'favorites' | 'settings'
+type Tab = 'analytics' | 'homeDashboard' | 'categories' | 'items' | 'serviceFields' | 'services' | 'serviceRequests' | 'orders' | 'favorites' | 'settings'
 type OrderStatus = 'all' | 'pending' | 'completed' | 'cancelled'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1276,6 +1276,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
+    { id: 'homeDashboard', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { id: 'categories', label: 'Categories', icon: <LayoutGrid className="w-4 h-4" /> },
     { id: 'items', label: 'Items', icon: <UtensilsCrossed className="w-4 h-4" /> },
     { id: 'serviceFields', label: 'Fields', icon: <Layers className="w-4 h-4" /> },
@@ -1506,8 +1507,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
         )}
 
-        <ServicesAdminSection activeTab={activeTab} />
+        <<ServicesAdminSection activeTab={activeTab} />
 
+        <HomeDashboardAdminSection activeTab={activeTab} />
+          
         {/* ORDERS TAB - FIX 11, 12, 13 */}
         {activeTab === 'orders' && (
           <div className="p-4">
