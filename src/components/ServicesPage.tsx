@@ -6,10 +6,12 @@ import { ServiceDetailModal } from './ServiceDetailModal'
 import { ServiceRequestForm } from './ServiceRequestForm'
 import { ServiceItem } from '../types/service'
 import { MenuCategory } from '../types/menu'
-import { serviceActionLabels } from '../data/serviceData'
+import { serviceActionLabelKeys } from '../data/serviceData'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export const ServicesPage: React.FC = () => {
+  const { t } = useLanguage()
   const [fields, setFields] = useState<MenuCategory[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,8 +35,13 @@ export const ServicesPage: React.FC = () => {
     })()
   }, [])
 
+  const getActionLabel = (categoryId: string) => {
+    const key = serviceActionLabelKeys[categoryId]
+    return key ? t[key] : t.actionRequest
+  }
+
   const filteredItems = services.filter(item => item.categoryId === activeCategory)
-  const actionLabel = serviceActionLabels[activeCategory] || 'Request'
+  const actionLabel = getActionLabel(activeCategory)
 
   const handleCardClick = (item: ServiceItem) => {
     setSelectedService(item)
@@ -80,7 +87,7 @@ export const ServicesPage: React.FC = () => {
         item={selectedService}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
-        actionLabel={selectedService ? serviceActionLabels[selectedService.categoryId] || 'Request' : 'Request'}
+        actionLabel={selectedService ? getActionLabel(selectedService.categoryId) : t.actionRequest}
         onActionClick={() => {
           if (selectedService) {
             setIsDetailOpen(false)
@@ -92,7 +99,7 @@ export const ServicesPage: React.FC = () => {
 
       <ServiceRequestForm
         item={requestItem}
-        actionLabel={requestItem ? serviceActionLabels[requestItem.categoryId] || 'Request' : 'Request'}
+        actionLabel={requestItem ? getActionLabel(requestItem.categoryId) : t.actionRequest}
         isOpen={isRequestFormOpen}
         onClose={() => setIsRequestFormOpen(false)}
         fields={fields}
