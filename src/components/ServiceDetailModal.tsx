@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, AlertCircle, Tag } from 'lucide-react'
 import { ServiceItem } from '../types/service'
 import { MenuCategory } from '../types/menu'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface ServiceDetailModalProps {
   item: ServiceItem | null
@@ -22,6 +23,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
   fields,
 }) => {
   const [imageError, setImageError] = useState(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (isOpen) setImageError(false)
@@ -90,7 +92,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
                     <div className="flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 px-4 py-2 rounded-full">
                       <AlertCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-sm font-bold text-red-500">Unavailable</span>
+                      <span className="text-sm font-bold text-red-500">{t.unavailable}</span>
                     </div>
                   </div>
                 )}
@@ -113,7 +115,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
                 {item.available && (
                   <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-                    ✓ Available
+                    ✓ {t.available}
                   </span>
                 )}
 
@@ -143,7 +145,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                 {item.notes && (
                   <div className="mb-5">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-2">
-                      Good to know
+                      {t.goodToKnow}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
                       {item.notes}
@@ -154,15 +156,15 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                 <div className="h-px bg-gray-100 dark:bg-gray-800 mb-5" />
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Price</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t.priceLabel}</span>
                   {item.price !== undefined ? (
                     <span className="text-xl font-bold text-gray-900 dark:text-white">
                       {item.price.toLocaleString()}{' '}
-                      <span className="text-base font-semibold text-gray-500 dark:text-gray-400">Birr</span>
+                      <span className="text-base font-semibold text-gray-500 dark:text-gray-400">{t.birr}</span>
                     </span>
                   ) : (
                     <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                      Complimentary
+                      {t.complimentary}
                     </span>
                   )}
                 </div>
@@ -182,7 +184,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30'
                 }`}
               >
-                {item.available ? actionLabel : 'Unavailable'}
+                {item.available ? actionLabel : t.unavailable}
               </motion.button>
             </div>
 
