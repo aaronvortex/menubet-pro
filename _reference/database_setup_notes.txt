@@ -1,0 +1,21 @@
+MENUBET DATABASE SETUP NOTES
+Run these in Supabase SQL Editor later - Step 33 of the build.
+This file is for reference only. Do not execute anything here.
+
+TABLES NEEDED:
+1. admin_users
+2. categories
+3. menu_items
+4. orders
+5. user_preferences
+6. hotel_settings
+
+Full SQL will be provided at Step 33.
+
+All other .tsx and .ts files should be created as completely
+empty files with just this single comment line inside:
+// TODO: implement in upcoming step
+
+Make sure the app runs and shows the Step 1 placeholder screen.
+Do NOT install any extra packages beyond what is listed above.
+Do NOT set up any database, backend, or server of any kind.
