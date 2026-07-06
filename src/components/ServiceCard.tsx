@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { AlertCircle, Clock } from 'lucide-react'
 import { ServiceItem } from '../types/service'
 import { serviceCategoryStyles } from '../data/serviceData'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface ServiceCardProps {
   item: ServiceItem
@@ -13,6 +14,7 @@ interface ServiceCardProps {
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({ item, actionLabel, onCardClick, onActionClick }) => {
   const [imageError, setImageError] = useState(false)
+  const { t } = useLanguage()
   const style = serviceCategoryStyles[item.categoryId]
 
   const handleAction = (e: React.MouseEvent) => {
@@ -53,7 +55,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, actionLabel, onC
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
             <div className="flex items-center gap-1.5 bg-white/90 dark:bg-gray-800/90 px-3 py-1.5 rounded-full">
               <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-              <span className="text-xs font-semibold text-red-500">Unavailable</span>
+              <span className="text-xs font-semibold text-red-500">{t.unavailable}</span>
             </div>
           </div>
         )}
@@ -61,7 +63,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, actionLabel, onC
         <div className="absolute top-2 left-2">
           {item.available && (
             <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-              Available
+              {t.available}
             </span>
           )}
         </div>
@@ -89,11 +91,11 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, actionLabel, onC
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
                   {item.price.toLocaleString()}
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">Birr</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">{t.birr}</span>
               </>
             ) : (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                Complimentary
+                {t.complimentary}
               </span>
             )}
           </div>
