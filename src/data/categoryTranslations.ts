@@ -5,58 +5,72 @@ export const categoryNameTranslations: Record<LanguageCode, Record<string, strin
   en: {
     mains: 'Mains', grill: 'Grill', specials: 'Specials',
     drinks: 'Drinks', alcohol: 'Alcohol',
+    laundry: 'Laundry', housekeeping: 'Housekeeping', spa: 'Spa', maintenance: 'Maintenance',
   },
   am: {
     mains: 'ዋና ምግቦች', grill: 'ግሪሎ', specials: 'ልዩ ምግቦች',
     drinks: 'መጠጦች', alcohol: 'አልኮሆል',
+    laundry: 'ልብስ ማጠቢያ', housekeeping: 'የክፍል ጽዳት', spa: 'ስፓ', maintenance: 'ጥገና',
   },
   om: {
     mains: 'Nyaata Gurguddaa', grill: 'Giriila', specials: 'Addaa',
     drinks: 'Dhugaatii', alcohol: 'Alkoolii',
+    laundry: 'Uffata Dhiqu', housekeeping: 'Qulqullina Kutaa', spa: 'Ispaa', maintenance: 'Suphaa',
   },
   ti: {
     mains: 'ዋና መግቢ', grill: 'ግሪሎ', specials: 'ፍሉይ',
     drinks: 'መስተዋዶ', alcohol: 'ኣልኮሆል',
+    laundry: 'ክዳን ምሕጻብ', housekeeping: 'ጽሬት ክፍሊ', spa: 'ስፓ', maintenance: 'ጽገና',
   },
   ar: {
     mains: 'الأطباق الرئيسية', grill: 'المشويات', specials: 'الأطباق الخاصة',
     drinks: 'المشروبات', alcohol: 'الكحوليات',
+    laundry: 'الغسيل', housekeeping: 'خدمة الغرف', spa: 'المنتجع الصحي', maintenance: 'الصيانة',
   },
   fr: {
     mains: 'Plats Principaux', grill: 'Grill', specials: 'Spécialités',
     drinks: 'Boissons', alcohol: 'Alcools',
+    laundry: 'Blanchisserie', housekeeping: 'Ménage', spa: 'Spa', maintenance: 'Maintenance',
   },
   zh: {
     mains: '主菜', grill: '烧烤', specials: '特色菜',
     drinks: '饮品', alcohol: '酒水',
+    laundry: '洗衣', housekeeping: '客房清洁', spa: '水疗', maintenance: '维修',
   },
   es: {
     mains: 'Platos Principales', grill: 'Parrilla', specials: 'Especiales',
     drinks: 'Bebidas', alcohol: 'Alcohol',
+    laundry: 'Lavandería', housekeeping: 'Limpieza', spa: 'Spa', maintenance: 'Mantenimiento',
   },
   ja: {
     mains: 'メインディッシュ', grill: 'グリル', specials: 'スペシャル',
     drinks: '飲み物', alcohol: 'アルコール',
+    laundry: 'ランドリー', housekeeping: 'ハウスキーピング', spa: 'スパ', maintenance: 'メンテナンス',
   },
   he: {
     mains: 'מנות עיקריות', grill: 'גריל', specials: 'מיוחדים',
     drinks: 'משקאות', alcohol: 'אלכוהול',
+    laundry: 'כביסה', housekeeping: 'ניקיון החדר', spa: 'ספא', maintenance: 'תחזוקה',
   },
   de: {
     mains: 'Hauptgerichte', grill: 'Grill', specials: 'Spezialitäten',
     drinks: 'Getränke', alcohol: 'Alkohol',
+    laundry: 'Wäsche', housekeeping: 'Housekeeping', spa: 'Spa', maintenance: 'Wartung',
   },
   ru: {
     mains: 'Основные блюда', grill: 'Гриль', specials: 'Особые блюда',
     drinks: 'Напитки', alcohol: 'Алкоголь',
+    laundry: 'Прачечная', housekeeping: 'Уборка номера', spa: 'Спа', maintenance: 'Обслуживание',
   },
   pt: {
     mains: 'Pratos Principais', grill: 'Grill', specials: 'Especiais',
     drinks: 'Bebidas', alcohol: 'Álcool',
+    laundry: 'Lavanderia', housekeeping: 'Limpeza', spa: 'Spa', maintenance: 'Manutenção',
   },
   it: {
     mains: 'Piatti Principali', grill: 'Griglia', specials: 'Speciali',
     drinks: 'Bevande', alcohol: 'Alcolici',
+    laundry: 'Lavanderia', housekeeping: 'Pulizie', spa: 'Spa', maintenance: 'Manutenzione',
   },
 }
 
