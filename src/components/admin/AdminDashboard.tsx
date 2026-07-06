@@ -1510,6 +1510,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         <<ServicesAdminSection activeTab={activeTab} />
 
         <HomeDashboardAdminSection activeTab={activeTab} />
+          
         {/* ORDERS TAB - FIX 11, 12, 13 */}
         {activeTab === 'orders' && (
           <div className="p-4">
