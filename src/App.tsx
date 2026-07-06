@@ -16,17 +16,19 @@ import { OnboardingOverlay } from './components/onboarding/OnboardingOverlay'
 import { AdminLogin } from './components/admin/AdminLogin'
 import { AdminDashboard } from './components/admin/AdminDashboard'
 import { SubCategoryPage } from './components/SubCategoryPage'
+import { HomePage } from './components/HomePage'
 import { PageWrapper } from './components/animations/PageTransition'
 import { PageTransitionOverlay } from './components/animations/PageTransitionOverlay'
 import { usePageTransition } from './hooks/usePageTransition'
 import { fetchCategories, fetchMenuItems } from './services/dataService'
 import { BottomNav, BottomNavTab } from './components/BottomNav'
 import { ServicesPage } from './components/ServicesPage'
+import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 import { MenuCategory, MenuItem, CartItem } from './types/menu'
 import { useLanguage } from './contexts/LanguageContext'
 import { useAdmin } from './contexts/AdminContext'
 
-type AppView = 'menu' | 'subcategory' | 'services'
+type AppView = 'home' | 'menu' | 'subcategory' | 'services'
 
 function AppContent() {
   const { t } = useLanguage()
@@ -48,7 +50,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   // ── View state ────────────────────────────────────
-  const [currentView, setCurrentView] = useState<AppView>('menu')
+  const [currentView, setCurrentView] = useState<AppView>('home')
 
   // ── Navigation state ──────────────────────────────
   const [activeCategory, setActiveCategory] = useState<string>('')
@@ -200,11 +202,43 @@ function AppContent() {
     ? 'info'
     : currentView === 'services'
     ? 'services'
+    : currentView === 'home'
+    ? 'home'
     : 'menu'
 
+  // ── Floating-nav tab switches trigger the same branded splash used ───
+  // ── for category-level transitions, so all 4 tabs feel consistent.
+
+  const goToHome = () => {
+    if (currentView !== 'home') runPageTransition()
+    setCurrentView('home')
+    setActiveSubCategory(null)
+  }
+
   const goToMenu = () => {
+    if (currentView !== 'menu') runPageTransition()
     setCurrentView('menu')
     setActiveSubCategory(null)
+  }
+
+  // Used by Home's "Order Food" / "Popular Dishes" links — optionally jumps
+  // straight to a specific category, same as tapping that category tab.
+  const handleNavigateToMenu = (categoryId?: string) => {
+    runPageTransition()
+    if (categoryId) setActiveCategory(categoryId)
+    setActiveSubCategory(null)
+    setCurrentView('menu')
+  }
+
+  const goToServices = () => {
+    if (currentView !== 'services') runPageTransition()
+    setCurrentView('services')
+    setActiveSubCategory(null)
+  }
+
+  const openDirectory = () => {
+    runPageTransition(450)
+    setIsDirectoryOpen(true)
   }
 
   // ── Admin Dashboard View ───────────────────────────
@@ -227,9 +261,18 @@ function AppContent() {
         onCartClick={() => setIsCartOpen(true)}
       />
 
-      {currentView === 'services' ? (
+      {currentView === 'home' ? (
+        <PageWrapper pageKey="home">
+          <HomePage
+            categories={categories}
+            items={items}
+            onNavigateToMenu={handleNavigateToMenu}
+            onNavigateToServices={goToServices}
+          />
+        </PageWrapper>
+      ) : currentView === 'services' ? (
         <PageWrapper pageKey="services">
-          <ServicesPage />
+          <ServicesPage onCategoryTransition={() => runPageTransition()} />
         </PageWrapper>
       ) : currentView === 'subcategory' ? (
         <PageWrapper pageKey={`sub-${activeCategory}-${subCategoryPageFilter}`}>
@@ -323,14 +366,15 @@ function AppContent() {
       {/* Branded page transition splash — always on top */}
       <PageTransitionOverlay isVisible={isTransitioning} />
 
+      {/* PWA "install this app" popup */}
+      <PWAInstallPrompt />
+
       <BottomNav
         activeTab={bottomNavActiveTab}
+        onHomeClick={goToHome}
         onMenuClick={goToMenu}
-        onServicesClick={() => {
-          setCurrentView('services')
-          setActiveSubCategory(null)
-        }}
-        onInfoClick={() => setIsDirectoryOpen(true)}
+        onServicesClick={goToServices}
+        onInfoClick={openDirectory}
       />
 
     </div>
