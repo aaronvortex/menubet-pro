@@ -22,6 +22,7 @@ import { usePageTransition } from './hooks/usePageTransition'
 import { fetchCategories, fetchMenuItems } from './services/dataService'
 import { BottomNav, BottomNavTab } from './components/BottomNav'
 import { ServicesPage } from './components/ServicesPage'
+import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 import { MenuCategory, MenuItem, CartItem } from './types/menu'
 import { useLanguage } from './contexts/LanguageContext'
 import { useAdmin } from './contexts/AdminContext'
@@ -202,9 +203,24 @@ function AppContent() {
     ? 'services'
     : 'menu'
 
+  // ── Floating-nav tab switches now trigger the same branded splash ────
+  // ── used for category-level transitions, so all 3 tabs feel consistent.
+
   const goToMenu = () => {
+    if (currentView !== 'menu') runPageTransition()
     setCurrentView('menu')
     setActiveSubCategory(null)
+  }
+
+  const goToServices = () => {
+    if (currentView !== 'services') runPageTransition()
+    setCurrentView('services')
+    setActiveSubCategory(null)
+  }
+
+  const openDirectory = () => {
+    runPageTransition(450)
+    setIsDirectoryOpen(true)
   }
 
   // ── Admin Dashboard View ───────────────────────────
@@ -229,7 +245,7 @@ function AppContent() {
 
       {currentView === 'services' ? (
         <PageWrapper pageKey="services">
-          <ServicesPage />
+          <ServicesPage onCategoryTransition={() => runPageTransition()} />
         </PageWrapper>
       ) : currentView === 'subcategory' ? (
         <PageWrapper pageKey={`sub-${activeCategory}-${subCategoryPageFilter}`}>
@@ -323,14 +339,14 @@ function AppContent() {
       {/* Branded page transition splash — always on top */}
       <PageTransitionOverlay isVisible={isTransitioning} />
 
+      {/* PWA "install this app" popup */}
+      <PWAInstallPrompt />
+
       <BottomNav
         activeTab={bottomNavActiveTab}
         onMenuClick={goToMenu}
-        onServicesClick={() => {
-          setCurrentView('services')
-          setActiveSubCategory(null)
-        }}
-        onInfoClick={() => setIsDirectoryOpen(true)}
+        onServicesClick={goToServices}
+        onInfoClick={openDirectory}
       />
 
     </div>
