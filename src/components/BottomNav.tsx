@@ -1,11 +1,12 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { UtensilsCrossed, ConciergeBell, Info, Video as LucideIcon } from 'lucide-react'
+import { Home, UtensilsCrossed, ConciergeBell, Info, Video as LucideIcon } from 'lucide-react'
 
-export type BottomNavTab = 'menu' | 'services' | 'info'
+export type BottomNavTab = 'home' | 'menu' | 'services' | 'info'
 
 interface BottomNavProps {
   activeTab: BottomNavTab
+  onHomeClick: () => void
   onMenuClick: () => void
   onServicesClick: () => void
   onInfoClick: () => void
@@ -20,11 +21,13 @@ interface TabConfig {
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
+  onHomeClick,
   onMenuClick,
   onServicesClick,
   onInfoClick,
 }) => {
   const tabs: TabConfig[] = [
+    { key: 'home', label: 'Home', icon: Home, onClick: onHomeClick },
     { key: 'menu', label: 'Menu', icon: UtensilsCrossed, onClick: onMenuClick },
     { key: 'services', label: 'Services', icon: ConciergeBell, onClick: onServicesClick },
     { key: 'info', label: 'Info', icon: Info, onClick: onInfoClick },
