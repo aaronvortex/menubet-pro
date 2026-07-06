@@ -6,6 +6,7 @@ import { StaggeredGrid } from './animations/StaggeredGrid'
 import { ShimmerSkeleton } from './animations/ShimmerSkeleton'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useShimmerTimer } from '../hooks/useShimmerTimer'
+import { useScrollHighlight } from '../hooks/useScrollHighlight'
 
 interface MenuGridProps {
   items: MenuItem[]
@@ -15,6 +16,7 @@ interface MenuGridProps {
   onAddToCart: (item: CartItem) => void
   onItemClick: (item: MenuItem) => void
   onToggleFavorite: (itemId: string) => void
+  highlightItemId?: string | null
 }
 
 export const MenuGrid: React.FC<MenuGridProps> = ({
@@ -25,10 +27,14 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
   onAddToCart,
   onItemClick,
   onToggleFavorite,
+  highlightItemId = null,
 }) => {
   const { t } = useLanguage()
   const shimmerKey = activeSubCategory ? activeCategory + '-' + activeSubCategory : activeCategory
   const shimmerReady = useShimmerTimer(shimmerKey)
+
+  // Scrolls to + briefly highlights the item matched by Home's universal search
+  useScrollHighlight('menu-item', highlightItemId)
 
   // Show shimmer while timer hasn't elapsed OR data is still loading
   if (!shimmerReady || isLoading) {
@@ -71,13 +77,14 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     >
       <StaggeredGrid gridKey={gridKey} columns={2} gap={3}>
         {items.map(item => (
-          <MenuCard
-            key={item.id}
-            item={item}
-            onAddToCart={onAddToCart}
-            onItemClick={onItemClick}
-            onToggleFavorite={onToggleFavorite}
-          />
+          <div key={item.id} id={`menu-item-${item.id}`}>
+            <MenuCard
+              item={item}
+              onAddToCart={onAddToCart}
+              onItemClick={onItemClick}
+              onToggleFavorite={onToggleFavorite}
+            />
+          </div>
         ))}
       </StaggeredGrid>
     </motion.div>
