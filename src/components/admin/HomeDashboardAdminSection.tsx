@@ -124,7 +124,7 @@ const SpecialForm: React.FC<{ initial?: HomeSpecial | null; onSave: (d: Partial<
             <FormField label="Emoji" value={emoji} onChange={setEmoji} placeholder="🧺" />
           </div>
           <FormField label="Image URL (optional)" value={imageUrl} onChange={setImageUrl} placeholder="https://... (overrides emoji if set)" />
-          </div>
+          
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Start Date" value={startDate} onChange={setStartDate} type="date" />
             <FormField label="End Date" value={endDate} onChange={setEndDate} type="date" />
