@@ -7,6 +7,7 @@ import {
 import { MenuCategory, MenuItem } from '../types/menu'
 import { ServiceItem } from '../types/service'
 import { useLanguage } from '../contexts/LanguageContext'
+import { ServiceCategoryIcon } from './ServiceCategoryIcon'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
 import { translateCategory, translateSubCategory } from '../data/categoryTranslations'
 import {
