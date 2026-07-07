@@ -44,6 +44,42 @@ export interface HomeAnnouncement {
   active: boolean
 }
 
+export interface HomeSettings {
+  id: string
+  greeting: string
+  welcome_message: string
+  section_title_offers: string
+  section_title_popular_dishes: string
+  section_title_popular_services: string
+  section_title_announcements: string
+  search_enabled: boolean
+}
+
+export interface HomePopularDish {
+  id: string
+  item_id: string
+  sort_order: number
+  active: boolean
+}
+
+export interface HomePopularService {
+  id: string
+  category_id: string
+  sort_order: number
+  active: boolean
+}
+
+const DEFAULT_HOME_SETTINGS: HomeSettings = {
+  id: 'default',
+  greeting: 'Welcome to our hotel 👋',
+  welcome_message: "We're delighted to serve you.",
+  section_title_offers: "Today's Offers",
+  section_title_popular_dishes: 'Popular Dishes',
+  section_title_popular_services: 'Popular Services',
+  section_title_announcements: 'Announcements',
+  search_enabled: true,
+}
+
 // ─────────────────────────────────────────────
 // SCHEDULING HELPER — used by both the Home page (guest-facing filter)
 // and the admin list (to show Live / Scheduled / Expired status)
@@ -77,10 +113,7 @@ export const getScheduleStatus = (
 
 export const fetchSpecials = async (): Promise<HomeSpecial[]> => {
   try {
-    const { data, error } = await supabase
-      .from('home_specials')
-      .select('*')
-      .order('sort_order')
+    const { data, error } = await supabase.from('home_specials').select('*').order('sort_order')
     if (error) { console.error('❌ fetchSpecials:', error.message); return [] }
     return data || []
   } catch (err) {
@@ -138,10 +171,7 @@ export const deleteSpecial = async (id: string): Promise<void> => {
 
 export const fetchPromotions = async (): Promise<HomePromotion[]> => {
   try {
-    const { data, error } = await supabase
-      .from('home_promotions')
-      .select('*')
-      .order('sort_order')
+    const { data, error } = await supabase.from('home_promotions').select('*').order('sort_order')
     if (error) { console.error('❌ fetchPromotions:', error.message); return [] }
     return data || []
   } catch (err) {
@@ -201,10 +231,7 @@ export const deletePromotion = async (id: string): Promise<void> => {
 
 export const fetchAnnouncements = async (): Promise<HomeAnnouncement[]> => {
   try {
-    const { data, error } = await supabase
-      .from('home_announcements')
-      .select('*')
-      .order('sort_order')
+    const { data, error } = await supabase.from('home_announcements').select('*').order('sort_order')
     if (error) { console.error('❌ fetchAnnouncements:', error.message); return [] }
     return data || []
   } catch (err) {
@@ -250,4 +277,119 @@ export const updateAnnouncement = async (id: string, item: Partial<HomeAnnouncem
 export const deleteAnnouncement = async (id: string): Promise<void> => {
   const { error } = await supabase.from('home_announcements').delete().eq('id', id)
   if (error) { console.error('❌ deleteAnnouncement:', error.message); throw error }
+}
+
+// ─────────────────────────────────────────────
+// HOME SETTINGS — greeting, welcome text, custom section titles, search toggle
+// ─────────────────────────────────────────────
+
+export const fetchHomeSettings = async (): Promise<HomeSettings> => {
+  try {
+    const { data, error } = await supabase
+      .from('home_settings')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle()
+    if (error || !data) {
+      if (error) console.error('❌ fetchHomeSettings:', error.message)
+      return DEFAULT_HOME_SETTINGS
+    }
+    return data
+  } catch (err) {
+    console.error('❌ fetchHomeSettings exception:', err)
+    return DEFAULT_HOME_SETTINGS
+  }
+}
+
+export const updateHomeSettings = async (settings: Partial<HomeSettings>): Promise<void> => {
+  const { error } = await supabase.from('home_settings').update({
+    greeting: settings.greeting,
+    welcome_message: settings.welcome_message,
+    section_title_offers: settings.section_title_offers,
+    section_title_popular_dishes: settings.section_title_popular_dishes,
+    section_title_popular_services: settings.section_title_popular_services,
+    section_title_announcements: settings.section_title_announcements,
+    search_enabled: settings.search_enabled,
+    updated_at: new Date().toISOString(),
+  }).eq('id', 'default')
+  if (error) { console.error('❌ updateHomeSettings:', error.message); throw error }
+}
+
+// ─────────────────────────────────────────────
+// POPULAR DISHES — admin-curated selection + order, referencing menu item IDs
+// ─────────────────────────────────────────────
+
+export const fetchPopularDishes = async (): Promise<HomePopularDish[]> => {
+  try {
+    const { data, error } = await supabase.from('home_popular_dishes').select('*').order('sort_order')
+    if (error) { console.error('❌ fetchPopularDishes:', error.message); return [] }
+    return data || []
+  } catch (err) {
+    console.error('❌ fetchPopularDishes exception:', err)
+    return []
+  }
+}
+
+// Guest-facing helper: ordered list of active item IDs to feature on Home.
+// Returns [] if the admin hasn't curated a list yet (Home falls back to rating-sort).
+export const fetchActivePopularDishIds = async (): Promise<string[]> => {
+  const all = await fetchPopularDishes()
+  return all
+    .filter(d => d.active)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(d => d.item_id)
+}
+
+// Replace-all: admin picks a fresh ordered list, we swap the whole table content
+export const setPopularDishes = async (itemIds: string[]): Promise<void> => {
+  const { error: delError } = await supabase
+    .from('home_popular_dishes')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+  if (delError) { console.error('❌ setPopularDishes (clear):', delError.message); throw delError }
+
+  if (itemIds.length === 0) return
+
+  const rows = itemIds.map((item_id, index) => ({ item_id, sort_order: index, active: true }))
+  const { error } = await supabase.from('home_popular_dishes').insert(rows)
+  if (error) { console.error('❌ setPopularDishes (insert):', error.message); throw error }
+}
+
+// ─────────────────────────────────────────────
+// POPULAR SERVICES — admin-curated selection + order, referencing category IDs
+// ─────────────────────────────────────────────
+
+export const fetchPopularServices = async (): Promise<HomePopularService[]> => {
+  try {
+    const { data, error } = await supabase.from('home_popular_services').select('*').order('sort_order')
+    if (error) { console.error('❌ fetchPopularServices:', error.message); return [] }
+    return data || []
+  } catch (err) {
+    console.error('❌ fetchPopularServices exception:', err)
+    return []
+  }
+}
+
+// Guest-facing helper: ordered list of active category IDs to feature on Home.
+// Returns [] if the admin hasn't curated a list yet (Home falls back to showing all).
+export const fetchActivePopularServiceCategoryIds = async (): Promise<string[]> => {
+  const all = await fetchPopularServices()
+  return all
+    .filter(s => s.active)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(s => s.category_id)
+}
+
+export const setPopularServices = async (categoryIds: string[]): Promise<void> => {
+  const { error: delError } = await supabase
+    .from('home_popular_services')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+  if (delError) { console.error('❌ setPopularServices (clear):', delError.message); throw delError }
+
+  if (categoryIds.length === 0) return
+
+  const rows = categoryIds.map((category_id, index) => ({ category_id, sort_order: index, active: true }))
+  const { error } = await supabase.from('home_popular_services').insert(rows)
+  if (error) { console.error('❌ setPopularServices (insert):', error.message); throw error }
 }
