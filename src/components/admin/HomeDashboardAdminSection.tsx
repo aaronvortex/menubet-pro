@@ -104,7 +104,7 @@ const SpecialForm: React.FC<{ initial?: HomeSpecial | null; onSave: (d: Partial<
     if (!validate()) return
     setSaving(true)
     try {
-      await onSave({ title, subtitle, badge, emoji, start_date: startDate ? `${startDate}T00:00:00` : null, end_date: endDate ? `${endDate}T23:59:59` : null, sort_order: Number(sortOrder) || 0, active })
+      await onSave({ title, subtitle, badge, emoji, image_url: imageUrl, start_date: startDate ? `${startDate}T00:00:00` : null, end_date: endDate ? `${endDate}T23:59:59` : null, sort_order: Number(sortOrder) || 0, active })
       onClose()
     } finally { setSaving(false) }
   }
