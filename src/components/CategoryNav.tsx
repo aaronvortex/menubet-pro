@@ -75,13 +75,13 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
                 />
               )}
 
-              <motion.span
-                className="relative z-10 text-2xl mb-1.5 leading-none"
+              <motion.div
+                className="relative z-10 mb-1.5"
                 animate={isActive ? { scale: [1, 1.18, 1] } : { scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                {category.icon}
-              </motion.span>
+                <ServiceCategoryIcon categoryId={category.id} fallbackEmoji={category.icon} size="sm" />
+              </motion.div>
 
               <span
                 className={`relative z-10 text-xs leading-tight text-center font-semibold whitespace-nowrap transition-colors duration-200 ${
