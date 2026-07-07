@@ -25,6 +25,7 @@ import {
 import { MenuCategory, MenuItem, Order, HotelSettings } from '../../types/menu'
 import { AnalyticsCardSkeleton, AdminListSkeleton } from '../animations/ShimmerSkeleton'
 import { ServicesAdminSection } from './ServicesAdminSection'
+import { HomeDashboardAdminSection } from './HomeDashboardAdminSection'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
