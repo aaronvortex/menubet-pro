@@ -1277,6 +1277,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
+    { id: 'homeDashboard', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { id: 'categories', label: 'Categories', icon: <LayoutGrid className="w-4 h-4" /> },
     { id: 'items', label: 'Items', icon: <UtensilsCrossed className="w-4 h-4" /> },
     { id: 'serviceFields', label: 'Fields', icon: <Layers className="w-4 h-4" /> },
