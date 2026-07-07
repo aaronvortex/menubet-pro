@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, UtensilsCrossed, ClipboardList, Settings, LogOut, Plus, CreditCard as Edit2, Trash2, X, Check, AlertCircle, Save, RefreshCw, Clock, CheckCircle, XCircle, Eye, Hotel, Phone, MapPin, Image as ImageIcon, ToggleLeft, ToggleRight, BarChart2, TrendingUp, ShoppingBag, DollarSign, Package, Star, ArrowUp, ArrowDown, Minus, Calendar, Activity, TrendingDown, Heart, Layers, ConciergeBell, Inbox } from 'lucide-react'
+import { LayoutGrid, UtensilsCrossed, ClipboardList, Settings, LogOut, Home, Plus, CreditCard as Edit2, Trash2, X, Check, AlertCircle, Save, RefreshCw, Clock, CheckCircle, XCircle, Eye, Hotel, Phone, MapPin, Image as ImageIcon, ToggleLeft, ToggleRight, BarChart2, TrendingUp, ShoppingBag, DollarSign, Package, Star, ArrowUp, ArrowDown, Minus, Calendar, Activity, TrendingDown, Heart, Layers, ConciergeBell, Inbox } from 'lucide-react'
 import { useAdmin } from '../../contexts/AdminContext'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useHotelSettings } from '../../contexts/HotelSettingsContext'
