@@ -31,6 +31,19 @@ export interface HomePromotion {
   active: boolean
 }
 
+export type AnnouncementPriority = 'normal' | 'important' | 'urgent'
+
+export interface HomeAnnouncement {
+  id: string
+  text: string
+  time_label: string
+  priority: AnnouncementPriority
+  start_date: string | null
+  end_date: string | null
+  sort_order: number
+  active: boolean
+}
+
 // ─────────────────────────────────────────────
 // SCHEDULING HELPER — used by both the Home page (guest-facing filter)
 // and the admin list (to show Live / Scheduled / Expired status)
@@ -76,7 +89,6 @@ export const fetchSpecials = async (): Promise<HomeSpecial[]> => {
   }
 }
 
-// Guest-facing helper: only currently-active, schedule-valid specials, in order
 export const fetchActiveSpecials = async (): Promise<HomeSpecial[]> => {
   const all = await fetchSpecials()
   return all
@@ -138,7 +150,6 @@ export const fetchPromotions = async (): Promise<HomePromotion[]> => {
   }
 }
 
-// Guest-facing helper: only currently-active, schedule-valid promotions, in order
 export const fetchActivePromotions = async (): Promise<HomePromotion[]> => {
   const all = await fetchPromotions()
   return all
@@ -182,4 +193,61 @@ export const updatePromotion = async (id: string, promo: Partial<HomePromotion>)
 export const deletePromotion = async (id: string): Promise<void> => {
   const { error } = await supabase.from('home_promotions').delete().eq('id', id)
   if (error) { console.error('❌ deletePromotion:', error.message); throw error }
+}
+
+// ─────────────────────────────────────────────
+// ANNOUNCEMENTS
+// ─────────────────────────────────────────────
+
+export const fetchAnnouncements = async (): Promise<HomeAnnouncement[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('home_announcements')
+      .select('*')
+      .order('sort_order')
+    if (error) { console.error('❌ fetchAnnouncements:', error.message); return [] }
+    return data || []
+  } catch (err) {
+    console.error('❌ fetchAnnouncements exception:', err)
+    return []
+  }
+}
+
+export const fetchActiveAnnouncements = async (): Promise<HomeAnnouncement[]> => {
+  const all = await fetchAnnouncements()
+  return all
+    .filter(a => a.active && isWithinSchedule(a.start_date, a.end_date))
+    .sort((a, b) => a.sort_order - b.sort_order)
+}
+
+export const createAnnouncement = async (item: Partial<HomeAnnouncement>): Promise<void> => {
+  if (!item.text) throw new Error('Text is required')
+  const { error } = await supabase.from('home_announcements').insert([{
+    text: item.text.trim(),
+    time_label: item.time_label?.trim() || '',
+    priority: item.priority || 'normal',
+    start_date: item.start_date || null,
+    end_date: item.end_date || null,
+    sort_order: item.sort_order ?? 0,
+    active: item.active ?? true,
+  }])
+  if (error) { console.error('❌ createAnnouncement:', error.message); throw error }
+}
+
+export const updateAnnouncement = async (id: string, item: Partial<HomeAnnouncement>): Promise<void> => {
+  const { error } = await supabase.from('home_announcements').update({
+    text: item.text?.trim(),
+    time_label: item.time_label?.trim() || '',
+    priority: item.priority || 'normal',
+    start_date: item.start_date || null,
+    end_date: item.end_date || null,
+    sort_order: item.sort_order ?? 0,
+    active: item.active ?? true,
+  }).eq('id', id)
+  if (error) { console.error('❌ updateAnnouncement:', error.message); throw error }
+}
+
+export const deleteAnnouncement = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('home_announcements').delete().eq('id', id)
+  if (error) { console.error('❌ deleteAnnouncement:', error.message); throw error }
 }
