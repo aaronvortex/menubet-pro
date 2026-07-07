@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, SlidersHorizontal, Phone, Tag, Bell, ChevronRight,
-  UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle,
+  UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle,
 } from 'lucide-react'
 import { MenuCategory, MenuItem } from '../types/menu'
 import { ServiceItem } from '../types/service'
@@ -10,7 +10,10 @@ import { useHotelSettings } from '../contexts/HotelSettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
 import { translateCategory, translateSubCategory } from '../data/categoryTranslations'
-import { fetchActiveSpecials, fetchActivePromotions, HomeSpecial, HomePromotion } from '../services/homeDashboardService'
+import {
+  fetchActiveSpecials, fetchActivePromotions, fetchActiveAnnouncements,
+  HomeSpecial, HomePromotion, HomeAnnouncement,
+} from '../services/homeDashboardService'
 
 interface HomePageProps {
   categories: MenuCategory[]
@@ -18,15 +21,6 @@ interface HomePageProps {
   onNavigateToMenu: (categoryId?: string, itemId?: string, subCategory?: string) => void
   onNavigateToServices: (categoryId?: string, serviceId?: string) => void
 }
-
-// Today's Offers now come from Supabase — managed in Admin → Home → Specials.
-// Announcements are still a placeholder until Phase 4 wires them up too.
-
-const SAMPLE_ANNOUNCEMENTS = [
-  { id: 'a1', text: 'Breakfast is served from 6:00 AM to 10:30 AM', time: 'Daily' },
-  { id: 'a2', text: 'Pool maintenance scheduled this afternoon', time: 'Today' },
-  { id: 'a3', text: 'Live music in the lobby lounge tonight', time: 'Tonight' },
-]
 
 export const HomePage: React.FC<HomePageProps> = ({
   categories,
@@ -42,20 +36,23 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([])
   const [specials, setSpecials] = useState<HomeSpecial[]>([])
   const [promotions, setPromotions] = useState<HomePromotion[]>([])
+  const [announcements, setAnnouncements] = useState<HomeAnnouncement[]>([])
   const offersRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     (async () => {
-      const [fields, servicesData, specialsData, promotionsData] = await Promise.all([
+      const [fields, servicesData, specialsData, promotionsData, announcementsData] = await Promise.all([
         fetchServiceFields(),
         fetchServices(),
         fetchActiveSpecials(),
         fetchActivePromotions(),
+        fetchActiveAnnouncements(),
       ])
       setServiceFields(fields)
       setServiceItems(servicesData)
       setSpecials(specialsData)
       setPromotions(promotionsData)
+      setAnnouncements(announcementsData)
     })()
   }, [])
 
@@ -139,6 +136,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     if (settings.reception_phone) {
       window.location.href = `tel:${settings.reception_phone}`
     }
+  }
+
+  const announcementStyles: Record<string, { bg: string; icon: string; ring: string }> = {
+    normal: { bg: 'bg-blue-100 dark:bg-blue-900/40', icon: 'text-blue-600 dark:text-blue-400', ring: '' },
+    important: { bg: 'bg-amber-100 dark:bg-amber-900/40', icon: 'text-amber-600 dark:text-amber-400', ring: '' },
+    urgent: { bg: 'bg-red-100 dark:bg-red-900/40', icon: 'text-red-600 dark:text-red-400', ring: 'ring-1 ring-red-200 dark:ring-red-800' },
   }
 
   return (
@@ -231,7 +234,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </motion.div>
 
-      {/* ── Today's Offers — now live from Supabase (Admin → Home → Specials) ── */}
+      {/* ── Today's Offers — live from Supabase (Admin → Home → Specials) ── */}
       {specials.length > 0 && (
         <div ref={offersRef} className="mb-6">
           <div className="flex items-center justify-between mb-3">
@@ -269,6 +272,44 @@ export const HomePage: React.FC<HomePageProps> = ({
                   )}
                 </div>
               </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Promotions carousel — live from Supabase (Admin → Home → Promotions) ── */}
+      {promotions.length > 0 && (
+        <div className="mb-6">
+          <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+            {promotions.map((promo, i) => (
+              <motion.button
+                key={promo.id}
+                onClick={() =>
+                  promo.target_page === 'services'
+                    ? onNavigateToServices(promo.target_category_id || undefined)
+                    : onNavigateToMenu(promo.target_category_id || undefined)
+                }
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="flex-shrink-0 w-72 snap-start relative rounded-2xl overflow-hidden shadow-sm text-left h-32"
+              >
+                {promo.image_url ? (
+                  <img src={promo.image_url} alt={promo.title} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-3">
+                  <h3 className="text-sm font-bold text-white leading-tight">{promo.title}</h3>
+                  {promo.description && (
+                    <p className="text-xs text-white/85 line-clamp-1 mt-0.5">{promo.description}</p>
+                  )}
+                  <span className="inline-block mt-1.5 text-[11px] font-bold text-white/95 self-start">
+                    {promo.button_label} →
+                  </span>
+                </div>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -357,32 +398,43 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       )}
 
-      {/* ── Announcements (sample — becomes admin-managed in Phase 4) ──── */}
-      <div className="mb-2">
-        <div className="flex items-center gap-2 mb-3">
-          <Megaphone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Announcements</h2>
+      {/* ── Announcements — live from Supabase (Admin → Home → Announcements) ── */}
+      {announcements.length > 0 && (
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Megaphone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Announcements</h2>
+          </div>
+          <div className="space-y-2">
+            {announcements.map((note, i) => {
+              const style = announcementStyles[note.priority] || announcementStyles.normal
+              return (
+                <motion.div
+                  key={note.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`flex items-start gap-3 bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm ${style.ring}`}
+                >
+                  <div className={`w-8 h-8 rounded-lg ${style.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                    {note.priority === 'urgent' ? (
+                      <AlertTriangle className={`w-4 h-4 ${style.icon}`} />
+                    ) : (
+                      <Bell className={`w-4 h-4 ${style.icon}`} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug">{note.text}</p>
+                    {note.time_label && (
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">{note.time_label}</p>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
-        <div className="space-y-2">
-          {SAMPLE_ANNOUNCEMENTS.map((note, i) => (
-            <motion.div
-              key={note.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="flex items-start gap-3 bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm"
-            >
-              <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug">{note.text}</p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">{note.time}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+      )}
 
     </div>
   )
