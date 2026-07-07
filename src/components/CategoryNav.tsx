@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { MenuCategory } from '../types/menu'
 import { useLanguage } from '../contexts/LanguageContext'
 import { translateCategory } from '../data/categoryTranslations'
+import { ServiceCategoryIcon } from './ServiceCategoryIcon'
 
 interface CategoryNavProps {
   categories: MenuCategory[]
