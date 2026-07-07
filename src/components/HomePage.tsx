@@ -375,7 +375,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 transition={{ delay: i * 0.05 }}
                 className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
               >
-                <span className="text-2xl">{field.icon}</span>
+                <ServiceCategoryIcon categoryId={field.id} fallbackEmoji={field.icon} size="md" />
                 <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">
                   {translateCategory(field.id, field.name, language)}
                 </span>
