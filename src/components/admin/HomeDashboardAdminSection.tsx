@@ -90,6 +90,7 @@ const SpecialForm: React.FC<{ initial?: HomeSpecial | null; onSave: (d: Partial<
   const [subtitle, setSubtitle] = useState(initial?.subtitle || '')
   const [badge, setBadge] = useState(initial?.badge || '')
   const [emoji, setEmoji] = useState(initial?.emoji || '🍽️')
+  const [imageUrl, setImageUrl] = useState(initial?.image_url || '')
   const [startDate, setStartDate] = useState(initial?.start_date?.slice(0, 10) || '')
   const [endDate, setEndDate] = useState(initial?.end_date?.slice(0, 10) || '')
   const [sortOrder, setSortOrder] = useState(String(initial?.sort_order ?? 0))
