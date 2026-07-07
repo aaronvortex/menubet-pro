@@ -6,13 +6,13 @@ import {
 } from 'lucide-react'
 import { MenuCategory, MenuItem } from '../types/menu'
 import { ServiceItem } from '../types/service'
-import { useHotelSettings } from '../contexts/HotelSettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
 import { translateCategory, translateSubCategory } from '../data/categoryTranslations'
 import {
   fetchActiveSpecials, fetchActivePromotions, fetchActiveAnnouncements,
-  HomeSpecial, HomePromotion, HomeAnnouncement,
+  fetchHomeSettings, fetchActivePopularDishIds, fetchActivePopularServiceCategoryIds,
+  HomeSpecial, HomePromotion, HomeAnnouncement, HomeSettings,
 } from '../services/homeDashboardService'
 
 interface HomePageProps {
@@ -28,7 +28,6 @@ export const HomePage: React.FC<HomePageProps> = ({
   onNavigateToMenu,
   onNavigateToServices,
 }) => {
-  const { settings } = useHotelSettings()
   const { language, t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -37,29 +36,46 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [specials, setSpecials] = useState<HomeSpecial[]>([])
   const [promotions, setPromotions] = useState<HomePromotion[]>([])
   const [announcements, setAnnouncements] = useState<HomeAnnouncement[]>([])
+  const [homeSettings, setHomeSettings] = useState<HomeSettings | null>(null)
+  const [popularDishIds, setPopularDishIds] = useState<string[]>([])
+  const [popularServiceIds, setPopularServiceIds] = useState<string[]>([])
   const offersRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     (async () => {
-      const [fields, servicesData, specialsData, promotionsData, announcementsData] = await Promise.all([
+      const [
+        fields, servicesData, specialsData, promotionsData, announcementsData,
+        settings, curatedDishIds, curatedServiceIds,
+      ] = await Promise.all([
         fetchServiceFields(),
         fetchServices(),
         fetchActiveSpecials(),
         fetchActivePromotions(),
         fetchActiveAnnouncements(),
+        fetchHomeSettings(),
+        fetchActivePopularDishIds(),
+        fetchActivePopularServiceCategoryIds(),
       ])
       setServiceFields(fields)
       setServiceItems(servicesData)
       setSpecials(specialsData)
       setPromotions(promotionsData)
       setAnnouncements(announcementsData)
+      setHomeSettings(settings)
+      setPopularDishIds(curatedDishIds)
+      setPopularServiceIds(curatedServiceIds)
     })()
   }, [])
 
-  const popularDishes = [...items]
-    .filter(i => i.available)
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 8)
+  // Popular Dishes: admin-curated order if set, otherwise fall back to rating sort
+  const popularDishes = popularDishIds.length > 0
+    ? popularDishIds.map(id => items.find(i => i.id === id)).filter(Boolean) as MenuItem[]
+    : [...items].filter(i => i.available).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 8)
+
+  // Popular Services: admin-curated order if set, otherwise show all categories
+  const popularServiceFields = popularServiceIds.length > 0
+    ? popularServiceIds.map(id => serviceFields.find(f => f.id === id)).filter(Boolean) as MenuCategory[]
+    : serviceFields
 
   // ── Universal search — cascades from most specific match to least ─────
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -67,7 +83,6 @@ export const HomePage: React.FC<HomePageProps> = ({
     const q = searchQuery.trim().toLowerCase()
     if (!q) return
 
-    // 1. A specific service item (e.g. "Wash & Fold")
     const matchedService = serviceItems.find(s => s.name.toLowerCase().includes(q))
     if (matchedService) {
       setSearchError(null)
@@ -75,7 +90,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       return
     }
 
-    // 2. A service category (e.g. "Spa", "Laundry")
     const matchedServiceField = serviceFields.find(f =>
       f.name.toLowerCase().includes(q) ||
       f.id.toLowerCase().includes(q) ||
@@ -87,7 +101,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       return
     }
 
-    // 3. A specific menu item (e.g. "Pizza")
     const matchedItem = items.find(i => i.name.toLowerCase().includes(q))
     if (matchedItem) {
       setSearchError(null)
@@ -95,10 +108,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       return
     }
 
-    // 4. A menu sub-category (e.g. "Juice")
-    const allSubCategories = Array.from(
-      new Set(items.map(i => i.subCategory).filter(Boolean))
-    ) as string[]
+    const allSubCategories = Array.from(new Set(items.map(i => i.subCategory).filter(Boolean))) as string[]
     const matchedSub = allSubCategories.find(sub =>
       sub.toLowerCase().includes(q) ||
       translateSubCategory(sub, language).toLowerCase().includes(q)
@@ -112,7 +122,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       }
     }
 
-    // 5. A menu category (e.g. "Drinks", "Mains")
     const matchedCategory = categories.find(c =>
       c.name.toLowerCase().includes(q) ||
       c.id.toLowerCase().includes(q) ||
@@ -124,7 +133,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       return
     }
 
-    // No match anywhere
     setSearchError(t.noResults)
   }
 
@@ -133,9 +141,11 @@ export const HomePage: React.FC<HomePageProps> = ({
   }
 
   const handleContactUs = () => {
-    if (settings.reception_phone) {
-      window.location.href = `tel:${settings.reception_phone}`
-    }
+    // Reception phone is shown/managed elsewhere (Header + Hotel Directory);
+    // Home's Contact Us button simply opens the Hotel Directory-style call flow
+    // via the phone icon that's already wired up in the Header.
+    const phoneLink = document.querySelector<HTMLAnchorElement>('a[href^="tel:"]')
+    if (phoneLink) phoneLink.click()
   }
 
   const announcementStyles: Record<string, { bg: string; icon: string; ring: string }> = {
@@ -144,38 +154,50 @@ export const HomePage: React.FC<HomePageProps> = ({
     urgent: { bg: 'bg-red-100 dark:bg-red-900/40', icon: 'text-red-600 dark:text-red-400', ring: 'ring-1 ring-red-200 dark:ring-red-800' },
   }
 
+  const searchEnabled = homeSettings?.search_enabled ?? true
+  const greeting = homeSettings?.greeting || 'Welcome 👋'
+  const welcomeMessage = homeSettings?.welcome_message || "We're delighted to serve you."
+  const titleOffers = homeSettings?.section_title_offers || "Today's Offers"
+  const titlePopularDishes = homeSettings?.section_title_popular_dishes || 'Popular Dishes'
+  const titlePopularServices = homeSettings?.section_title_popular_services || 'Popular Services'
+  const titleAnnouncements = homeSettings?.section_title_announcements || 'Announcements'
+
   return (
     <div className="px-4 pt-3 pb-28">
 
-      {/* ── Universal Search ─────────────────────────────────────────── */}
-      <form onSubmit={handleSearchSubmit} className="mb-1.5">
-        <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm">
-          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => {
-              setSearchQuery(e.target.value)
-              if (searchError) setSearchError(null)
-            }}
-            placeholder="Search for food, drinks or services..."
-            className="flex-1 bg-transparent outline-none text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
-          />
-          <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
-        </div>
-      </form>
+      {/* ── Universal Search (admin can disable) ─────────────────────── */}
+      {searchEnabled && (
+        <>
+          <form onSubmit={handleSearchSubmit} className="mb-1.5">
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm">
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => {
+                  setSearchQuery(e.target.value)
+                  if (searchError) setSearchError(null)
+                }}
+                placeholder="Search for food, drinks or services..."
+                className="flex-1 bg-transparent outline-none text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
+              />
+              <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            </div>
+          </form>
 
-      {searchError && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-1.5 text-xs text-red-500 font-medium px-1 mb-3"
-        >
-          <AlertCircle className="w-3.5 h-3.5" />
-          {searchError}
-        </motion.div>
+          {searchError && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-1.5 text-xs text-red-500 font-medium px-1 mb-3"
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              {searchError}
+            </motion.div>
+          )}
+          {!searchError && <div className="mb-3" />}
+        </>
       )}
-      {!searchError && <div className="mb-3" />}
 
       {/* ── Welcome Card ─────────────────────────────────────────────── */}
       <motion.div
@@ -184,48 +206,32 @@ export const HomePage: React.FC<HomePageProps> = ({
         transition={{ duration: 0.3 }}
         className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-4 mb-6"
       >
-        <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-          Welcome to {settings.hotel_name} 👋
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          We're delighted to serve you.
-        </p>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-white">{greeting}</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{welcomeMessage}</p>
 
         <div className="grid grid-cols-4 gap-2 mt-4">
-          <button
-            onClick={() => onNavigateToMenu()}
-            className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
+          <button onClick={() => onNavigateToMenu()} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
               <UtensilsCrossed className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Order Food</span>
           </button>
 
-          <button
-            onClick={() => onNavigateToServices()}
-            className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
+          <button onClick={() => onNavigateToServices()} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
               <ConciergeBell className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Services</span>
           </button>
 
-          <button
-            onClick={scrollToOffers}
-            className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
+          <button onClick={scrollToOffers} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
               <Tag className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Offers</span>
           </button>
 
-          <button
-            onClick={handleContactUs}
-            className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
+          <button onClick={handleContactUs} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
               <Phone className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
@@ -234,11 +240,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </motion.div>
 
-      {/* ── Today's Offers — live from Supabase (Admin → Home → Specials) ── */}
+      {/* ── Today's Offers ───────────────────────────────────────────── */}
       {specials.length > 0 && (
         <div ref={offersRef} className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Today's Offers</h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">{titleOffers}</h2>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
             {specials.map((offer, i) => (
@@ -262,13 +268,9 @@ export const HomePage: React.FC<HomePageProps> = ({
                   )}
                 </div>
                 <div className="p-2.5">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">
-                    {offer.title}
-                  </h3>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{offer.title}</h3>
                   {offer.subtitle && (
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
-                      {offer.subtitle}
-                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{offer.subtitle}</p>
                   )}
                 </div>
               </motion.div>
@@ -277,7 +279,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       )}
 
-      {/* ── Promotions carousel — live from Supabase (Admin → Home → Promotions) ── */}
+      {/* ── Promotions carousel ───────────────────────────────────────── */}
       {promotions.length > 0 && (
         <div className="mb-6">
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
@@ -302,12 +304,8 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="relative h-full flex flex-col justify-end p-3">
                   <h3 className="text-sm font-bold text-white leading-tight">{promo.title}</h3>
-                  {promo.description && (
-                    <p className="text-xs text-white/85 line-clamp-1 mt-0.5">{promo.description}</p>
-                  )}
-                  <span className="inline-block mt-1.5 text-[11px] font-bold text-white/95 self-start">
-                    {promo.button_label} →
-                  </span>
+                  {promo.description && <p className="text-xs text-white/85 line-clamp-1 mt-0.5">{promo.description}</p>}
+                  <span className="inline-block mt-1.5 text-[11px] font-bold text-white/95 self-start">{promo.button_label} →</span>
                 </div>
               </motion.button>
             ))}
@@ -319,11 +317,8 @@ export const HomePage: React.FC<HomePageProps> = ({
       {popularDishes.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Popular Dishes</h2>
-            <button
-              onClick={() => onNavigateToMenu()}
-              className="flex items-center gap-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400"
-            >
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">{titlePopularDishes}</h2>
+            <button onClick={() => onNavigateToMenu()} className="flex items-center gap-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
               View all <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -348,17 +343,11 @@ export const HomePage: React.FC<HomePageProps> = ({
                   {item.rating !== undefined && (
                     <div className="flex items-center gap-1 mb-1">
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
-                        {item.rating.toFixed(1)}
-                      </span>
+                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{item.rating.toFixed(1)}</span>
                     </div>
                   )}
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-1">
-                    {item.price.toLocaleString()} {t.birr}
-                  </p>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{item.name}</h3>
+                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-1">{item.price.toLocaleString()} {t.birr}</p>
                 </div>
               </motion.button>
             ))}
@@ -367,19 +356,16 @@ export const HomePage: React.FC<HomePageProps> = ({
       )}
 
       {/* ── Popular Services ─────────────────────────────────────────── */}
-      {serviceFields.length > 0 && (
+      {popularServiceFields.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Popular Services</h2>
-            <button
-              onClick={() => onNavigateToServices()}
-              className="flex items-center gap-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400"
-            >
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">{titlePopularServices}</h2>
+            <button onClick={() => onNavigateToServices()} className="flex items-center gap-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
               View all <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {serviceFields.map((field, i) => (
+            {popularServiceFields.map((field, i) => (
               <motion.button
                 key={field.id}
                 onClick={() => onNavigateToServices(field.id)}
@@ -398,12 +384,12 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       )}
 
-      {/* ── Announcements — live from Supabase (Admin → Home → Announcements) ── */}
+      {/* ── Announcements ─────────────────────────────────────────────── */}
       {announcements.length > 0 && (
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-3">
             <Megaphone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Announcements</h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">{titleAnnouncements}</h2>
           </div>
           <div className="space-y-2">
             {announcements.map((note, i) => {
@@ -425,9 +411,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug">{note.text}</p>
-                    {note.time_label && (
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">{note.time_label}</p>
-                    )}
+                    {note.time_label && <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">{note.time_label}</p>}
                   </div>
                 </motion.div>
               )
