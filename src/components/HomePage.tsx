@@ -5,7 +5,6 @@ import {
   UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle,
 } from 'lucide-react'
 import { MenuCategory, MenuItem } from '../types/menu'
-import { ServiceCategoryIcon } from './ServiceCategoryIcon'
 import { ServiceItem } from '../types/service'
 import { useLanguage } from '../contexts/LanguageContext'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
@@ -375,7 +374,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 transition={{ delay: i * 0.05 }}
                 className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
               >
-                <ServiceCategoryIcon categoryId={field.id} fallbackEmoji={field.icon} size="md" />
+                <span className="text-2xl">{field.icon}</span>
                 <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">
                   {translateCategory(field.id, field.name, language)}
                 </span>

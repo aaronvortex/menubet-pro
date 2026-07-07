@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { MenuCategory } from '../types/menu'
 import { useLanguage } from '../contexts/LanguageContext'
 import { translateCategory } from '../data/categoryTranslations'
-import { ServiceCategoryIcon } from './ServiceCategoryIcon'
 
 interface CategoryNavProps {
   categories: MenuCategory[]
@@ -75,13 +74,13 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
                 />
               )}
 
-              <motion.div
-                className="relative z-10 mb-1.5"
+              <motion.span
+                className="relative z-10 text-2xl mb-1.5 leading-none"
                 animate={isActive ? { scale: [1, 1.18, 1] } : { scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <ServiceCategoryIcon categoryId={category.id} fallbackEmoji={category.icon} size="sm" />
-              </motion.div>
+                {category.icon}
+              </motion.span>
 
               <span
                 className={`relative z-10 text-xs leading-tight text-center font-semibold whitespace-nowrap transition-colors duration-200 ${
