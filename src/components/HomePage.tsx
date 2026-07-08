@@ -5,6 +5,7 @@ import {
   UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle,
 } from 'lucide-react'
 import { MenuCategory, MenuItem } from '../types/menu'
+import { ExchangeRatesSection } from './home/ExchangeRatesSection'
 import { ServiceItem } from '../types/service'
 import { useLanguage } from '../contexts/LanguageContext'
 import { ServiceCategoryIcon } from './ServiceCategoryIcon'
