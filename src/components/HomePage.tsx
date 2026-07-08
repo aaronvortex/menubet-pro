@@ -386,6 +386,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       )}
 
+      {/* ── Exchange Rates ───────────────────────────────────────────── */}
+      <ExchangeRatesSection />
+
+      {/* ── Announcements ─────────────────────────────────────────────── */}
+
       {/* ── Announcements ─────────────────────────────────────────────── */}
       {announcements.length > 0 && (
         <div className="mb-2">
