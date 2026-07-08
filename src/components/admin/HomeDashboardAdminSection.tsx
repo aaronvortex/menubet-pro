@@ -4,6 +4,7 @@ import {
   Plus, CreditCard as Edit2, Trash2, X, Save, AlertCircle,
   ToggleLeft, ToggleRight, Tag, Megaphone as PromoIcon, Bell,
   Home as HomeIcon, ChevronUp, ChevronDown, Utensils, ConciergeBell,
+  Coins, TrendingUp, TrendingDown,
 } from 'lucide-react'
 import {
   HomeSpecial, HomePromotion, HomeAnnouncement, AnnouncementPriority, HomeSettings,
@@ -15,6 +16,10 @@ import {
   fetchPopularDishes, setPopularDishes,
   fetchPopularServices, setPopularServices,
 } from '../../services/homeDashboardService'
+import {
+  ExchangeRate, ExchangeTrend,
+  fetchExchangeRates, createExchangeRate, updateExchangeRate, deleteExchangeRate,
+} from '../../services/exchangeRatesService'
 import { fetchMenuItems } from '../../services/dataService'
 import { fetchServiceFields } from '../../services/serviceDataService'
 import { MenuItem, MenuCategory } from '../../types/menu'
@@ -124,7 +129,6 @@ const SpecialForm: React.FC<{ initial?: HomeSpecial | null; onSave: (d: Partial<
             <FormField label="Emoji" value={emoji} onChange={setEmoji} placeholder="🧺" />
           </div>
           <FormField label="Image URL (optional)" value={imageUrl} onChange={setImageUrl} placeholder="https://... (overrides emoji if set)" />
-          
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Start Date" value={startDate} onChange={setStartDate} type="date" />
             <FormField label="End Date" value={endDate} onChange={setEndDate} type="date" />
@@ -274,7 +278,92 @@ const AnnouncementForm: React.FC<{ initial?: HomeAnnouncement | null; onSave: (d
   )
 }
 
-// ── Welcome & Section Titles form (inline, no modal — it's a single settings row) ──
+// ── Exchange Rate form ────────────────────────────────────────────────────
+
+const ExchangeRateForm: React.FC<{ initial?: ExchangeRate | null; onSave: (d: Partial<ExchangeRate>) => Promise<void>; onClose: () => void }> = ({ initial, onSave, onClose }) => {
+  const [currencyCode, setCurrencyCode] = useState(initial?.currency_code || '')
+  const [currencyName, setCurrencyName] = useState(initial?.currency_name || '')
+  const [flagEmoji, setFlagEmoji] = useState(initial?.flag_emoji || '💱')
+  const [rate, setRate] = useState(String(initial?.rate ?? ''))
+  const [baseCurrency, setBaseCurrency] = useState(initial?.base_currency || 'Birr')
+  const [changePercent, setChangePercent] = useState(String(initial?.change_percent ?? 0))
+  const [trend, setTrend] = useState<ExchangeTrend>(initial?.trend || 'up')
+  const [sortOrder, setSortOrder] = useState(String(initial?.sort_order ?? 0))
+  const [active, setActive] = useState(initial?.active ?? true)
+  const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!currencyCode.trim()) e.currencyCode = 'Currency code is required (e.g. USD)'
+    if (!rate || isNaN(Number(rate))) e.rate = 'A valid rate is required'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validate()) return
+    setSaving(true)
+    try {
+      await onSave({
+        currency_code: currencyCode,
+        currency_name: currencyName,
+        flag_emoji: flagEmoji,
+        rate: Number(rate),
+        base_currency: baseCurrency,
+        change_percent: Number(changePercent) || 0,
+        trend,
+        sort_order: Number(sortOrder) || 0,
+        active,
+      })
+      onClose()
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[400] bg-black/60 flex items-end sm:items-center justify-center">
+      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-gray-900 flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">{initial ? 'Edit Currency' : 'Add Currency'}</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center"><X className="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Currency Code" value={currencyCode} onChange={setCurrencyCode} placeholder="USD" error={errors.currencyCode} />
+            <FormField label="Flag Emoji" value={flagEmoji} onChange={setFlagEmoji} placeholder="🇺🇸" />
+          </div>
+          <FormField label="Currency Name (optional)" value={currencyName} onChange={setCurrencyName} placeholder="US Dollar" />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Rate" value={rate} onChange={setRate} type="number" placeholder="158.42" error={errors.rate} />
+            <FormField label="Base Currency" value={baseCurrency} onChange={setBaseCurrency} placeholder="Birr" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Change %" value={changePercent} onChange={setChangePercent} type="number" placeholder="0.42" />
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Trend</label>
+              <select value={trend} onChange={e => setTrend(e.target.value as ExchangeTrend)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 text-sm text-gray-800 dark:text-white outline-none border-2 border-transparent focus:border-blue-500">
+                <option value="up">Up</option>
+                <option value="down">Down</option>
+              </select>
+            </div>
+          </div>
+          <FormField label="Sort Order" value={sortOrder} onChange={setSortOrder} type="number" />
+          <button onClick={() => setActive(!active)} className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+            {active ? <ToggleRight className="w-8 h-8 text-green-500" /> : <ToggleLeft className="w-8 h-8 text-gray-400" />}
+            {active ? 'Visible to guests' : 'Hidden from guests'}
+          </button>
+        </div>
+        <div className="p-5 pt-0">
+          <button onClick={handleSubmit} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60">
+            <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Currency'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+// ── Welcome & Section Titles panel ──────────────────────────────────────────
 
 const WelcomeSettingsPanel: React.FC = () => {
   const [settings, setSettings] = useState<HomeSettings | null>(null)
@@ -282,30 +371,15 @@ const WelcomeSettingsPanel: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    (async () => {
-      setSettings(await fetchHomeSettings())
-      setLoading(false)
-    })()
-  }, [])
+  useEffect(() => { (async () => { setSettings(await fetchHomeSettings()); setLoading(false) })() }, [])
 
-  if (loading || !settings) {
-    return <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mt-10" />
-  }
+  if (loading || !settings) return <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mt-10" />
 
-  const update = (field: keyof HomeSettings, value: string | boolean) => {
-    setSettings({ ...settings, [field]: value })
-    setSaved(false)
-  }
+  const update = (field: keyof HomeSettings, value: string | boolean) => { setSettings({ ...settings, [field]: value }); setSaved(false) }
 
   const handleSave = async () => {
     setSaving(true)
-    try {
-      await updateHomeSettings(settings)
-      setSaved(true)
-    } finally {
-      setSaving(false)
-    }
+    try { await updateHomeSettings(settings); setSaved(true) } finally { setSaving(false) }
   }
 
   return (
@@ -317,7 +391,6 @@ const WelcomeSettingsPanel: React.FC = () => {
           <FormField label="Welcome Text" value={settings.welcome_message} onChange={v => update('welcome_message', v)} placeholder="We're delighted to serve you." multiline />
         </div>
       </div>
-
       <div>
         <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3">Section Titles</h3>
         <div className="space-y-3">
@@ -327,22 +400,12 @@ const WelcomeSettingsPanel: React.FC = () => {
           <FormField label="Announcements Section" value={settings.section_title_announcements} onChange={v => update('section_title_announcements', v)} />
         </div>
       </div>
-
-      <button
-        onClick={() => update('search_enabled', !settings.search_enabled)}
-        className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
-      >
+      <button onClick={() => update('search_enabled', !settings.search_enabled)} className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
         {settings.search_enabled ? <ToggleRight className="w-8 h-8 text-green-500" /> : <ToggleLeft className="w-8 h-8 text-gray-400" />}
         {settings.search_enabled ? 'Universal search enabled' : 'Universal search disabled'}
       </button>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60"
-      >
-        <Save className="w-4 h-4" />
-        {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
+      <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60">
+        <Save className="w-4 h-4" />{saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
       </button>
     </div>
   )
@@ -362,44 +425,21 @@ const PopularDishesPanel: React.FC = () => {
       const [items, curated] = await Promise.all([fetchMenuItems(), fetchPopularDishes()])
       setAllItems(items)
       const validIds = new Set(items.map(i => i.id))
-      setSelectedOrder(
-        curated
-          .filter(c => c.active && validIds.has(c.item_id))
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map(c => c.item_id)
-      )
+      setSelectedOrder(curated.filter(c => c.active && validIds.has(c.item_id)).sort((a, b) => a.sort_order - b.sort_order).map(c => c.item_id))
       setLoading(false)
     })()
   }, [])
 
-  const toggle = (itemId: string) => {
-    setSaved(false)
-    setSelectedOrder(prev =>
-      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
-    )
-  }
-
+  const toggle = (itemId: string) => { setSaved(false); setSelectedOrder(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]) }
   const move = (itemId: string, direction: -1 | 1) => {
     setSaved(false)
     setSelectedOrder(prev => {
-      const idx = prev.indexOf(itemId)
-      const newIdx = idx + direction
+      const idx = prev.indexOf(itemId); const newIdx = idx + direction
       if (newIdx < 0 || newIdx >= prev.length) return prev
-      const copy = [...prev]
-      ;[copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]]
-      return copy
+      const copy = [...prev];[copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]]; return copy
     })
   }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await setPopularDishes(selectedOrder)
-      setSaved(true)
-    } finally {
-      setSaving(false)
-    }
-  }
+  const handleSave = async () => { setSaving(true); try { await setPopularDishes(selectedOrder); setSaved(true) } finally { setSaving(false) } }
 
   if (loading) return <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mt-10" />
 
@@ -418,47 +458,28 @@ const PopularDishesPanel: React.FC = () => {
                   <button onClick={() => move(item.id, -1)} disabled={i === 0} className="disabled:opacity-25"><ChevronUp className="w-4 h-4 text-gray-400" /></button>
                   <button onClick={() => move(item.id, 1)} disabled={i === selectedItems.length - 1} className="disabled:opacity-25"><ChevronDown className="w-4 h-4 text-gray-400" /></button>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-                  {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
-                </div>
+                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">{item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}</div>
                 <span className="text-sm font-semibold text-gray-800 dark:text-white flex-1 truncate">{item.name}</span>
-                <button onClick={() => toggle(item.id)} className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
-                  <X className="w-3.5 h-3.5 text-red-500" />
-                </button>
+                <button onClick={() => toggle(item.id)} className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0"><X className="w-3.5 h-3.5 text-red-500" /></button>
               </div>
             ))}
           </div>
         </div>
       )}
-
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">All Dishes</p>
       <div className="space-y-1.5 max-h-80 overflow-y-auto">
         {unselectedItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => toggle(item.id)}
-            className="w-full flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2.5 shadow-sm text-left"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-              {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
-            </div>
+          <button key={item.id} onClick={() => toggle(item.id)} className="w-full flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2.5 shadow-sm text-left">
+            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">{item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}</div>
             <span className="text-sm text-gray-700 dark:text-gray-300 flex-1 truncate">{item.name}</span>
             <Utensils className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
           </button>
         ))}
       </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60"
-      >
-        <Save className="w-4 h-4" />
-        {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Featured Dishes'}
+      <button onClick={handleSave} disabled={saving} className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60">
+        <Save className="w-4 h-4" />{saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Featured Dishes'}
       </button>
-      <p className="text-[11px] text-gray-400 mt-2 text-center">
-        Leave empty to auto-feature your highest-rated dishes instead.
-      </p>
+      <p className="text-[11px] text-gray-400 mt-2 text-center">Leave empty to auto-feature your highest-rated dishes instead.</p>
     </div>
   )
 }
@@ -477,44 +498,21 @@ const PopularServicesPanel: React.FC = () => {
       const [fields, curated] = await Promise.all([fetchServiceFields(), fetchPopularServices()])
       setAllFields(fields)
       const validIds = new Set(fields.map(f => f.id))
-      setSelectedOrder(
-        curated
-          .filter(c => c.active && validIds.has(c.category_id))
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map(c => c.category_id)
-      )
+      setSelectedOrder(curated.filter(c => c.active && validIds.has(c.category_id)).sort((a, b) => a.sort_order - b.sort_order).map(c => c.category_id))
       setLoading(false)
     })()
   }, [])
 
-  const toggle = (categoryId: string) => {
-    setSaved(false)
-    setSelectedOrder(prev =>
-      prev.includes(categoryId) ? prev.filter(id => id !== categoryId) : [...prev, categoryId]
-    )
-  }
-
+  const toggle = (categoryId: string) => { setSaved(false); setSelectedOrder(prev => prev.includes(categoryId) ? prev.filter(id => id !== categoryId) : [...prev, categoryId]) }
   const move = (categoryId: string, direction: -1 | 1) => {
     setSaved(false)
     setSelectedOrder(prev => {
-      const idx = prev.indexOf(categoryId)
-      const newIdx = idx + direction
+      const idx = prev.indexOf(categoryId); const newIdx = idx + direction
       if (newIdx < 0 || newIdx >= prev.length) return prev
-      const copy = [...prev]
-      ;[copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]]
-      return copy
+      const copy = [...prev];[copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]]; return copy
     })
   }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await setPopularServices(selectedOrder)
-      setSaved(true)
-    } finally {
-      setSaving(false)
-    }
-  }
+  const handleSave = async () => { setSaving(true); try { await setPopularServices(selectedOrder); setSaved(true) } finally { setSaving(false) } }
 
   if (loading) return <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mt-10" />
 
@@ -535,48 +533,128 @@ const PopularServicesPanel: React.FC = () => {
                 </div>
                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                 <span className="text-sm font-semibold text-gray-800 dark:text-white flex-1 truncate">{field.name}</span>
-                <button onClick={() => toggle(field.id)} className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
-                  <X className="w-3.5 h-3.5 text-red-500" />
-                </button>
+                <button onClick={() => toggle(field.id)} className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0"><X className="w-3.5 h-3.5 text-red-500" /></button>
               </div>
             ))}
           </div>
         </div>
       )}
-
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">All Service Categories</p>
       <div className="space-y-1.5">
         {unselectedFields.map(field => (
-          <button
-            key={field.id}
-            onClick={() => toggle(field.id)}
-            className="w-full flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2.5 shadow-sm text-left"
-          >
+          <button key={field.id} onClick={() => toggle(field.id)} className="w-full flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2.5 shadow-sm text-left">
             <span className="text-xl flex-shrink-0">{field.icon}</span>
             <span className="text-sm text-gray-700 dark:text-gray-300 flex-1 truncate">{field.name}</span>
             <ConciergeBell className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
           </button>
         ))}
       </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60"
-      >
-        <Save className="w-4 h-4" />
-        {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Featured Services'}
+      <button onClick={handleSave} disabled={saving} className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-60">
+        <Save className="w-4 h-4" />{saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Featured Services'}
       </button>
-      <p className="text-[11px] text-gray-400 mt-2 text-center">
-        Leave empty to show all service categories instead.
-      </p>
+      <p className="text-[11px] text-gray-400 mt-2 text-center">Leave empty to show all service categories instead.</p>
+    </div>
+  )
+}
+
+// ── Exchange Rates panel ──────────────────────────────────────────────────
+
+const ExchangeRatesPanel: React.FC = () => {
+  const [rates, setRates] = useState<ExchangeRate[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<ExchangeRate | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const load = async () => { setLoading(true); setRates((await fetchExchangeRates()).sort((a, b) => a.sort_order - b.sort_order)); setLoading(false) }
+
+  useEffect(() => { load() }, [])
+
+  const handleSave = async (data: Partial<ExchangeRate>) => {
+    if (editing) await updateExchangeRate(editing.id, data)
+    else await createExchangeRate(data)
+    await load()
+  }
+
+  const toggleActive = async (r: ExchangeRate) => {
+    await updateExchangeRate(r.id, { ...r, active: !r.active })
+    await load()
+  }
+
+  const move = async (r: ExchangeRate, direction: -1 | 1) => {
+    const idx = rates.findIndex(x => x.id === r.id)
+    const newIdx = idx + direction
+    if (newIdx < 0 || newIdx >= rates.length) return
+    const other = rates[newIdx]
+    await Promise.all([
+      updateExchangeRate(r.id, { ...r, sort_order: other.sort_order }),
+      updateExchangeRate(other.id, { ...other, sort_order: r.sort_order }),
+    ])
+    await load()
+  }
+
+  if (loading) return <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mt-10" />
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-bold text-gray-800 dark:text-white">Exchange Rates</h2>
+        <button onClick={() => { setEditing(null); setShowForm(true) }} className="flex items-center gap-1.5 bg-blue-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold">
+          <Plus className="w-3.5 h-3.5" /> Add Currency
+        </button>
+      </div>
+
+      {rates.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">No currencies yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {rates.map((r, i) => (
+            <div key={r.id} className="bg-white dark:bg-gray-800 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+              <div className="flex flex-col flex-shrink-0">
+                <button onClick={() => move(r, -1)} disabled={i === 0} className="disabled:opacity-25"><ChevronUp className="w-4 h-4 text-gray-400" /></button>
+                <button onClick={() => move(r, 1)} disabled={i === rates.length - 1} className="disabled:opacity-25"><ChevronDown className="w-4 h-4 text-gray-400" /></button>
+              </div>
+              <span className="text-2xl flex-shrink-0">{r.flag_emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">{r.currency_code}</h3>
+                  {!r.active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500">Hidden</span>}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs text-gray-600 dark:text-gray-300 font-semibold">{r.rate.toLocaleString()} {r.base_currency}</span>
+                  <span className={`flex items-center gap-0.5 text-xs font-bold ${r.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
+                    {r.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    {r.change_percent}%
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => toggleActive(r)} className="flex-shrink-0">
+                {r.active ? <ToggleRight className="w-7 h-7 text-green-500" /> : <ToggleLeft className="w-7 h-7 text-gray-400" />}
+              </button>
+              <button onClick={() => { setEditing(r); setShowForm(true) }} className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0"><Edit2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" /></button>
+              <button onClick={() => setDeletingId(r.id)} className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {showForm && <ExchangeRateForm initial={editing} onSave={handleSave} onClose={() => setShowForm(false)} />}
+        {deletingId && (
+          <MiniConfirmModal
+            message="Delete this currency? This cannot be undone."
+            onCancel={() => setDeletingId(null)}
+            onConfirm={async () => { await deleteExchangeRate(deletingId); setDeletingId(null); await load() }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
 // ── Main section ──────────────────────────────────────────────────────────
 
-type SubTab = 'settings' | 'specials' | 'promotions' | 'announcements' | 'popularDishes' | 'popularServices'
+type SubTab = 'settings' | 'specials' | 'promotions' | 'announcements' | 'popularDishes' | 'popularServices' | 'exchangeRates'
 
 interface HomeDashboardAdminSectionProps {
   activeTab: string
@@ -607,11 +685,7 @@ export const HomeDashboardAdminSection: React.FC<HomeDashboardAdminSectionProps>
   const loadPromotions = async () => { setPromotionsLoading(true); setPromotions(await fetchPromotions()); setPromotionsLoading(false) }
   const loadAnnouncements = async () => { setAnnouncementsLoading(true); setAnnouncements(await fetchAnnouncements()); setAnnouncementsLoading(false) }
 
-  useEffect(() => {
-    loadSpecials()
-    loadPromotions()
-    loadAnnouncements()
-  }, [])
+  useEffect(() => { loadSpecials(); loadPromotions(); loadAnnouncements() }, [])
 
   if (activeTab !== 'homeDashboard') return null
 
@@ -626,6 +700,7 @@ export const HomeDashboardAdminSection: React.FC<HomeDashboardAdminSectionProps>
     { key: 'announcements', label: 'Announcements', icon: <Bell className="w-3.5 h-3.5" /> },
     { key: 'popularDishes', label: 'Popular Dishes', icon: <Utensils className="w-3.5 h-3.5" /> },
     { key: 'popularServices', label: 'Popular Services', icon: <ConciergeBell className="w-3.5 h-3.5" /> },
+    { key: 'exchangeRates', label: 'Exchange Rates', icon: <Coins className="w-3.5 h-3.5" /> },
   ]
 
   return (
@@ -648,6 +723,7 @@ export const HomeDashboardAdminSection: React.FC<HomeDashboardAdminSectionProps>
       {subTab === 'settings' && <WelcomeSettingsPanel />}
       {subTab === 'popularDishes' && <PopularDishesPanel />}
       {subTab === 'popularServices' && <PopularServicesPanel />}
+      {subTab === 'exchangeRates' && <ExchangeRatesPanel />}
 
       {subTab === 'specials' && (
         <div>
