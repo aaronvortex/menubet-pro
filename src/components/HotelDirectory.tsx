@@ -1,27 +1,23 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
   Phone,
   MapPin,
   Clock,
-  Wifi,
-  Waves,
-  Dumbbell,
   Sparkles,
-  Users,
   ShieldAlert,
   UtensilsCrossed,
   BedDouble,
   Luggage,
   ChevronDown,
-  ChevronUp,
   Star,
   Building2,
   LogIn,
 } from 'lucide-react'
 import { useHotelSettings } from '../contexts/HotelSettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { fetchHotelInfoItems, HotelInfoItem, HotelInfoSection } from '../services/hotelInfoService'
 
 interface HotelDirectoryProps {
   isOpen: boolean
@@ -182,6 +178,25 @@ export const HotelDirectory: React.FC<HotelDirectoryProps> = ({
   const { settings } = useHotelSettings()
   const { t } = useLanguage()
   const [logoError, setLogoError] = useState(false)
+  const [infoItems, setInfoItems] = useState<HotelInfoItem[]>([])
+
+  useEffect(() => {
+    if (!isOpen) return
+    (async () => {
+      setInfoItems(await fetchHotelInfoItems())
+    })()
+  }, [isOpen])
+
+  const activeBySection = (section: HotelInfoSection): HotelInfoItem[] =>
+    infoItems
+      .filter(i => i.section === section && i.active)
+      .sort((a, b) => a.sort_order - b.sort_order)
+
+  const receptionItems = activeBySection('reception')
+  const restaurantItems = activeBySection('restaurant')
+  const facilitiesItems = activeBySection('facilities')
+  const servicesItems = activeBySection('services')
+  const emergencyItems = activeBySection('emergency')
 
   const handleCallReception = () => {
     if (settings.reception_phone) {
@@ -325,11 +340,14 @@ export const HotelDirectory: React.FC<HotelDirectoryProps> = ({
                   defaultOpen={true}
                 >
                   <div className="pt-2 space-y-0">
-                    <InfoRow
-                      label={t.receptionHours}
-                      value={t.open24Hours}
-                      icon={<Clock className="w-3 h-3" />}
-                    />
+                    {receptionItems.map(item => (
+                      <InfoRow
+                        key={item.id}
+                        label={item.label}
+                        value={item.value}
+                        icon={item.icon ? <span>{item.icon}</span> : <Clock className="w-3 h-3" />}
+                      />
+                    ))}
                     <InfoRow
                       label={t.checkIn}
                       value={settings.check_in || '2:00 PM'}
@@ -339,11 +357,6 @@ export const HotelDirectory: React.FC<HotelDirectoryProps> = ({
                       label={t.checkOut}
                       value={settings.check_out || '12:00 PM'}
                       icon={<BedDouble className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.luggageStorage}
-                      value={t.available}
-                      icon={<Luggage className="w-3 h-3" />}
                     />
                     {settings.reception_phone && (
                       <InfoRow
@@ -366,139 +379,109 @@ export const HotelDirectory: React.FC<HotelDirectoryProps> = ({
               </motion.div>
 
               {/* ── Restaurant Hours ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.11 }}
-              >
-                <Section
-                  icon={<UtensilsCrossed className="w-4 h-4" />}
-                  title={t.restaurantHours}
-                  accent="orange"
+              {restaurantItems.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.11 }}
                 >
-                  <div className="pt-2 space-y-0">
-                    <InfoRow
-                      label={t.breakfast}
-                      value="6:00 AM – 10:00 AM"
-                      icon={<Clock className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.lunch}
-                      value="12:00 PM – 3:00 PM"
-                      icon={<Clock className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.dinner}
-                      value="7:00 PM – 11:00 PM"
-                      icon={<Clock className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.roomService}
-                      value={t.open24Hours}
-                      icon={<Clock className="w-3 h-3" />}
-                    />
-                  </div>
-                </Section>
-              </motion.div>
+                  <Section
+                    icon={<UtensilsCrossed className="w-4 h-4" />}
+                    title={t.restaurantHours}
+                    accent="orange"
+                  >
+                    <div className="pt-2 space-y-0">
+                      {restaurantItems.map(item => (
+                        <InfoRow
+                          key={item.id}
+                          label={item.label}
+                          value={item.value}
+                          icon={item.icon ? <span>{item.icon}</span> : <Clock className="w-3 h-3" />}
+                        />
+                      ))}
+                    </div>
+                  </Section>
+                </motion.div>
+              )}
 
               {/* ── Facilities ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.14 }}
-              >
-                <Section
-                  icon={<Sparkles className="w-4 h-4" />}
-                  title={t.facilities}
-                  accent="purple"
+              {facilitiesItems.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.14 }}
                 >
-                  <div className="grid grid-cols-3 gap-2 pt-3">
-                    <FacilityBadge
-                      icon={<Wifi className="w-4 h-4" />}
-                      label={t.wifi}
-                    />
-                    <FacilityBadge
-                      icon={<Waves className="w-4 h-4" />}
-                      label={t.pool}
-                    />
-                    <FacilityBadge
-                      icon={<Dumbbell className="w-4 h-4" />}
-                      label={t.gym}
-                    />
-                    <FacilityBadge
-                      icon={<Sparkles className="w-4 h-4" />}
-                      label={t.spa}
-                    />
-                    <FacilityBadge
-                      icon={<Users className="w-4 h-4" />}
-                      label={t.conferenceRoom}
-                    />
-                    <FacilityBadge
-                      icon={<BedDouble className="w-4 h-4" />}
-                      label={t.roomService}
-                    />
-                  </div>
-                </Section>
-              </motion.div>
+                  <Section
+                    icon={<Sparkles className="w-4 h-4" />}
+                    title={t.facilities}
+                    accent="purple"
+                  >
+                    <div className="grid grid-cols-3 gap-2 pt-3">
+                      {facilitiesItems.map(item => (
+                        <FacilityBadge
+                          key={item.id}
+                          icon={<span className="text-base leading-none">{item.icon || '✨'}</span>}
+                          label={item.label}
+                        />
+                      ))}
+                    </div>
+                  </Section>
+                </motion.div>
+              )}
 
               {/* ── Services ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.17 }}
-              >
-                <Section
-                  icon={<Star className="w-4 h-4" />}
-                  title={t.services}
-                  accent="green"
+              {servicesItems.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.17 }}
                 >
-                  <div className="pt-2 space-y-0">
-                    <InfoRow label={t.airportShuttle} value={t.available} />
-                    <InfoRow label={t.laundryService} value={t.daily} />
-                    <InfoRow label={t.wakeUpCall} value={t.onRequest} />
-                    <InfoRow label={t.currencyExchange} value={t.reception} />
-                    <InfoRow label={t.tourBooking} value={t.concierge} />
-                  </div>
-                </Section>
-              </motion.div>
+                  <Section
+                    icon={<Star className="w-4 h-4" />}
+                    title={t.services}
+                    accent="green"
+                  >
+                    <div className="pt-2 space-y-0">
+                      {servicesItems.map(item => (
+                        <InfoRow key={item.id} label={item.label} value={item.value} />
+                      ))}
+                    </div>
+                  </Section>
+                </motion.div>
+              )}
 
               {/* ── Emergency Contacts ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Section
-                  icon={<ShieldAlert className="w-4 h-4" />}
-                  title={t.emergency}
-                  accent="red"
+              {emergencyItems.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <div className="pt-2 space-y-0">
-                    <InfoRow
-                      label={t.reception}
-                      value={settings.reception_phone || '0'}
-                      onPress={handleCallReception}
-                      highlight={true}
-                      icon={<Phone className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.security}
-                      value="Ext. 999"
-                      icon={<Phone className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.fireEmergency}
-                      value="Ext. 911"
-                      icon={<Phone className="w-3 h-3" />}
-                    />
-                    <InfoRow
-                      label={t.medical}
-                      value="Ext. 112"
-                      icon={<Phone className="w-3 h-3" />}
-                    />
-                  </div>
-                </Section>
-              </motion.div>
+                  <Section
+                    icon={<ShieldAlert className="w-4 h-4" />}
+                    title={t.emergency}
+                    accent="red"
+                  >
+                    <div className="pt-2 space-y-0">
+                      <InfoRow
+                        label={t.reception}
+                        value={settings.reception_phone || '0'}
+                        onPress={handleCallReception}
+                        highlight={true}
+                        icon={<Phone className="w-3 h-3" />}
+                      />
+                      {emergencyItems.map(item => (
+                        <InfoRow
+                          key={item.id}
+                          label={item.label}
+                          value={item.value}
+                          icon={<Phone className="w-3 h-3" />}
+                        />
+                      ))}
+                    </div>
+                  </Section>
+                </motion.div>
+              )}
 
               {/* ── Digital Menu Info ── */}
               <motion.div
