@@ -1154,6 +1154,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [settingsSaved, setSettingsSaved] = useState(false)
 
   const [favoritesCount, setFavoritesCount] = useState(0)
+  const [serviceRequestsPendingCount, setServiceRequestsPendingCount] = useState(0)
 
   useEffect(() => {
     setSettingsForm(settings)
@@ -1164,7 +1165,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     loadMenuItems()
     loadOrders()
     loadFavoritesCount()
+    loadServiceRequestsPendingCount()
   }, [])
+
+  const loadServiceRequestsPendingCount = async () => {
+    try {
+      const data = await fetchServiceRequests()
+      setServiceRequestsPendingCount(data.filter(r => r.status === 'pending').length)
+    } catch (error) {
+      console.error('Failed to load service requests count:', error)
+      setServiceRequestsPendingCount(0)
+    }
+  }
 
   const loadFavoritesCount = async () => {
     try {
