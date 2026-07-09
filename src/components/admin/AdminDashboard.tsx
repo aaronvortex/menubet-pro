@@ -1292,11 +1292,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
     { id: 'homeDashboard', label: 'Home', icon: <Home className="w-4 h-4" /> },
+    { id: 'info', label: 'Info', icon: <Info className="w-4 h-4" /> },
     { id: 'categories', label: 'Categories', icon: <LayoutGrid className="w-4 h-4" /> },
     { id: 'items', label: 'Items', icon: <UtensilsCrossed className="w-4 h-4" /> },
     { id: 'serviceFields', label: 'Fields', icon: <Layers className="w-4 h-4" /> },
     { id: 'services', label: 'Services', icon: <ConciergeBell className="w-4 h-4" /> },
-    { id: 'serviceRequests', label: 'Requests', icon: <Inbox className="w-4 h-4" /> },
+    { id: 'serviceRequests', label: 'Requests', icon: <Inbox className="w-4 h-4" />, badge: serviceRequestsPendingCount },
     { id: 'orders', label: 'Orders', icon: <ClipboardList className="w-4 h-4" />, badge: pendingCount },
     { id: 'favorites', label: 'Favorites', icon: <Heart className="w-4 h-4" />, badge: favoritesCount },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
