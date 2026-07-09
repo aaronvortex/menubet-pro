@@ -5,7 +5,6 @@ import {
   UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle,
 } from 'lucide-react'
 import { MenuCategory, MenuItem } from '../types/menu'
-import { ExchangeRatesSection } from './home/ExchangeRatesSection'
 import { ServiceItem } from '../types/service'
 import { useLanguage } from '../contexts/LanguageContext'
 import { ServiceCategoryIcon } from './ServiceCategoryIcon'
@@ -385,11 +384,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
       )}
-
-      {/* ── Exchange Rates ───────────────────────────────────────────── */}
-      <ExchangeRatesSection />
-
-      {/* ── Announcements ─────────────────────────────────────────────── */}
 
       {/* ── Announcements ─────────────────────────────────────────────── */}
       {announcements.length > 0 && (
