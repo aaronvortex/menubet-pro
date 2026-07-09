@@ -33,7 +33,7 @@ import { HomeDashboardAdminSection } from './HomeDashboardAdminSection'
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = 'analytics' | 'homeDashboard' | 'categories' | 'items' | 'serviceFields' | 'services' | 'serviceRequests' | 'orders' | 'favorites' | 'settings'
+type Tab = 'analytics' | 'homeDashboard' | 'info' | 'categories' | 'items' | 'serviceFields' | 'services' | 'serviceRequests' | 'orders' | 'favorites' | 'settings'
 type OrderStatus = 'all' | 'pending' | 'completed' | 'cancelled'
 
 // ─────────────────────────────────────────────────────────────────────────────
