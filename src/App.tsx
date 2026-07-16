@@ -267,7 +267,8 @@ function AppContent() {
             categories={categories}
             items={items}
             onNavigateToMenu={handleNavigateToMenu}
-            onNavigateToServices={goToServices}
+            onNavigateToServices={handleNavigateToServices}
+            onAddToCart={handleAddToCart}
           />
         </PageWrapper>
       ) : currentView === 'services' ? (
