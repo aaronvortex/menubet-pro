@@ -57,6 +57,11 @@ function AppContent() {
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null)
   const [subCategoryPageFilter, setSubCategoryPageFilter] = useState<string | null>(null)
 
+  // ── Universal search highlight/deep-link state ────────────────────
+  const [highlightMenuItemId, setHighlightMenuItemId] = useState<string | null>(null)
+  const [highlightServiceId, setHighlightServiceId] = useState<string | null>(null)
+  const [servicesInitialCategory, setServicesInitialCategory] = useState<string | null>(null)
+
   // ── UI overlay state ──────────────────────────────
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -221,19 +226,40 @@ function AppContent() {
     setActiveSubCategory(null)
   }
 
-  // Used by Home's "Order Food" / "Popular Dishes" links — optionally jumps
-  // straight to a specific category, same as tapping that category tab.
-  const handleNavigateToMenu = (categoryId?: string) => {
+  // Used by Home's quick actions, Popular Dishes, and the universal search.
+  // categoryId / itemId / subCategory are all optional so every caller can
+  // pass exactly as much as it knows.
+  const handleNavigateToMenu = (categoryId?: string, itemId?: string, subCategory?: string) => {
     runPageTransition()
     if (categoryId) setActiveCategory(categoryId)
-    setActiveSubCategory(null)
-    setCurrentView('menu')
+
+    if (subCategory) {
+      setActiveSubCategory(subCategory)
+      setSubCategoryPageFilter(subCategory)
+      setCurrentView('subcategory')
+    } else {
+      setActiveSubCategory(null)
+      setCurrentView('menu')
+    }
+
+    if (itemId) {
+      setHighlightMenuItemId(itemId)
+      setTimeout(() => setHighlightMenuItemId(null), 3000)
+    }
   }
 
-  const goToServices = () => {
-    if (currentView !== 'services') runPageTransition()
+  // Used by Home's quick actions, Popular Services, and the universal search.
+  const handleNavigateToServices = (categoryId?: string, serviceId?: string) => {
+    if (currentView !== 'services' || categoryId) runPageTransition()
     setCurrentView('services')
     setActiveSubCategory(null)
+
+    if (categoryId) setServicesInitialCategory(categoryId)
+
+    if (serviceId) {
+      setHighlightServiceId(serviceId)
+      setTimeout(() => setHighlightServiceId(null), 3000)
+    }
   }
 
   const openDirectory = () => {
@@ -273,7 +299,11 @@ function AppContent() {
         </PageWrapper>
       ) : currentView === 'services' ? (
         <PageWrapper pageKey="services">
-          <ServicesPage onCategoryTransition={() => runPageTransition()} />
+          <ServicesPage
+            onCategoryTransition={() => runPageTransition()}
+            initialCategoryId={servicesInitialCategory}
+            highlightServiceId={highlightServiceId}
+          />
         </PageWrapper>
       ) : currentView === 'subcategory' ? (
         <PageWrapper pageKey={`sub-${activeCategory}-${subCategoryPageFilter}`}>
@@ -286,6 +316,7 @@ function AppContent() {
             onItemClick={handleItemClick}
             onAddToCart={handleAddToCart}
             onToggleFavorite={handleToggleFavorite}
+            highlightItemId={highlightMenuItemId}
           />
         </PageWrapper>
       ) : (
@@ -314,6 +345,7 @@ function AppContent() {
               onAddToCart={handleAddToCart}
               onItemClick={handleItemClick}
               onToggleFavorite={handleToggleFavorite}
+              highlightItemId={highlightMenuItemId}
             />
           </div>
         </PageWrapper>
@@ -374,7 +406,7 @@ function AppContent() {
         activeTab={bottomNavActiveTab}
         onHomeClick={goToHome}
         onMenuClick={goToMenu}
-        onServicesClick={goToServices}
+        onServicesClick={() => handleNavigateToServices()}
         onInfoClick={openDirectory}
       />
 
