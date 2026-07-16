@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Search, SlidersHorizontal, Phone, Tag, Bell, ChevronRight,
-  UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle,
+  Search, SlidersHorizontal, ArrowLeftRight, Tag, Bell, ChevronRight,
+  UtensilsCrossed, ConciergeBell, Star, Megaphone, AlertCircle, AlertTriangle, Plus,
 } from 'lucide-react'
-import { MenuCategory, MenuItem } from '../types/menu'
-import { ExchangeRatesSection } from './home/ExchangeRatesSection'
+import { MenuCategory, MenuItem, CartItem } from '../types/menu'
+import { ServiceItem } from '../types/service'
 import { useLanguage } from '../contexts/LanguageContext'
-import { ServiceCategoryIcon } from './ServiceCategoryIcon'
 import { fetchServiceFields, fetchServices } from '../services/serviceDataService'
 import { translateCategory, translateSubCategory } from '../data/categoryTranslations'
 import {
@@ -15,12 +14,14 @@ import {
   fetchHomeSettings, fetchActivePopularDishIds, fetchActivePopularServiceCategoryIds,
   HomeSpecial, HomePromotion, HomeAnnouncement, HomeSettings,
 } from '../services/homeDashboardService'
+import { ExchangeRatesSection } from './home/ExchangeRatesSection'
 
 interface HomePageProps {
   categories: MenuCategory[]
   items: MenuItem[]
   onNavigateToMenu: (categoryId?: string, itemId?: string, subCategory?: string) => void
   onNavigateToServices: (categoryId?: string, serviceId?: string) => void
+  onAddToCart: (item: CartItem) => void
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -28,6 +29,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   items,
   onNavigateToMenu,
   onNavigateToServices,
+  onAddToCart,
 }) => {
   const { language, t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
@@ -41,6 +43,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [popularDishIds, setPopularDishIds] = useState<string[]>([])
   const [popularServiceIds, setPopularServiceIds] = useState<string[]>([])
   const offersRef = useRef<HTMLDivElement>(null)
+  const exchangeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     (async () => {
@@ -141,12 +144,13 @@ export const HomePage: React.FC<HomePageProps> = ({
     offersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const handleContactUs = () => {
-    // Reception phone is shown/managed elsewhere (Header + Hotel Directory);
-    // Home's Contact Us button simply opens the Hotel Directory-style call flow
-    // via the phone icon that's already wired up in the Header.
-    const phoneLink = document.querySelector<HTMLAnchorElement>('a[href^="tel:"]')
-    if (phoneLink) phoneLink.click()
+  const scrollToExchange = () => {
+    exchangeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleAddDishToCart = (e: React.MouseEvent, item: MenuItem) => {
+    e.stopPropagation()
+    onAddToCart({ ...item, cartQuantity: 1 })
   }
 
   const announcementStyles: Record<string, { bg: string; icon: string; ring: string }> = {
@@ -232,11 +236,11 @@ export const HomePage: React.FC<HomePageProps> = ({
             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Offers</span>
           </button>
 
-          <button onClick={handleContactUs} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={scrollToExchange} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              <ArrowLeftRight className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Contact Us</span>
+            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Exchange</span>
           </button>
         </div>
       </motion.div>
@@ -325,13 +329,13 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
             {popularDishes.map((item, i) => (
-              <motion.button
+              <motion.div
                 key={item.id}
                 onClick={() => onNavigateToMenu(item.category, item.id, item.subCategory)}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="flex-shrink-0 w-32 snap-start bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm text-left"
+                className="flex-shrink-0 w-32 snap-start bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm text-left cursor-pointer"
               >
                 <div className="w-full aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
                   {item.image ? (
@@ -347,10 +351,21 @@ export const HomePage: React.FC<HomePageProps> = ({
                       <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{item.rating.toFixed(1)}</span>
                     </div>
                   )}
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{item.name}</h3>
-                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-1">{item.price.toLocaleString()} {t.birr}</p>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-1 mb-1.5">{item.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400">{item.price.toLocaleString()} {t.birr}</p>
+                    <motion.button
+                      onClick={e => handleAddDishToCart(e, item)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.85 }}
+                      aria-label={t.addToCart}
+                      className="w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center flex-shrink-0 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.6} />
+                    </motion.button>
+                  </div>
                 </div>
-              </motion.button>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -375,7 +390,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 transition={{ delay: i * 0.05 }}
                 className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
               >
-                <ServiceCategoryIcon categoryId={field.id} fallbackEmoji={field.icon} size="md" />
+                <span className="text-2xl">{field.icon}</span>
                 <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">
                   {translateCategory(field.id, field.name, language)}
                 </span>
@@ -386,7 +401,9 @@ export const HomePage: React.FC<HomePageProps> = ({
       )}
 
       {/* ── Exchange Rates ───────────────────────────────────────────── */}
-      <ExchangeRatesSection />
+      <div ref={exchangeRef}>
+        <ExchangeRatesSection />
+      </div>
 
       {/* ── Announcements ─────────────────────────────────────────────── */}
       {announcements.length > 0 && (
