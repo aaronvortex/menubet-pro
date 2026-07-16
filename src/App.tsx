@@ -268,6 +268,7 @@ function AppContent() {
             items={items}
             onNavigateToMenu={handleNavigateToMenu}
             onNavigateToServices={handleNavigateToServices}
+            onAddToCart={handleAddToCart}
           />
         </PageWrapper>
       ) : currentView === 'services' ? (
