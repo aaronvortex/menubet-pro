@@ -159,7 +159,7 @@ export const PageTransitionOverlay: React.FC<PageTransitionOverlayProps> = ({
               transition={{ delay: 0.15, duration: 0.35 }}
               className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"
             >
-              MenuBet
+              Tewodros Belay
             </motion.h1>
 
             <motion.p
