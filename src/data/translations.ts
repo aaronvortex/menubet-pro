@@ -172,7 +172,7 @@ export const translations: Translations = {
 
   en: {
     appName: 'MenuBet',
-    tagline: 'Digital',
+    tagline: '⭐⭐⭐⭐',
     loading: 'Loading menu...',
     callReception: 'Call Reception',
     menu: 'Menu',
