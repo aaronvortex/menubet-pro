@@ -159,7 +159,7 @@ export const PageTransitionOverlay: React.FC<PageTransitionOverlayProps> = ({
               transition={{ delay: 0.15, duration: 0.35 }}
               className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"
             >
-              Tewodros Belay 🏨
+              Ararat Hotel 🏨
             </motion.h1>
 
             <motion.p
@@ -168,7 +168,7 @@ export const PageTransitionOverlay: React.FC<PageTransitionOverlayProps> = ({
               transition={{ delay: 0.25, duration: 0.35 }}
               className="text-base sm:text-lg text-blue-200 font-medium mt-1"
             >
-              MenuBet Hotel Platform
+              Smart Hotel Platform
             </motion.p>
 
             {/* Loading bar */}
