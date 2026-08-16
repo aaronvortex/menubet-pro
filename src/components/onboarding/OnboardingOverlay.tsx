@@ -197,7 +197,7 @@ export const OnboardingOverlay: React.FC = () => {
                     <div className="space-y-3">
                       <div className="bg-white/20 rounded-xl px-4 py-2.5 flex items-center gap-2">
                         <span className="text-lg">🏨</span>
-                        <span className="text-sm font-semibold text-white"> Ararat Hotel</span>
+                        <span className="text-sm font-semibold text-white"> Opal Hotel</span>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap justify-center">
                         {['🍜 Soups', '🥤 Drinks', '🍖 Mains', '🍰 Desserts'].map((cat, i) => (
