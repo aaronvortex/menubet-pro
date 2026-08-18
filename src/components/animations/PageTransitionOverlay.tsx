@@ -168,7 +168,7 @@ export const PageTransitionOverlay: React.FC<PageTransitionOverlayProps> = ({
               transition={{ delay: 0.25, duration: 0.35 }}
               className="text-base sm:text-lg text-blue-200 font-medium mt-1"
             >
-              Smart Hotel Platform
+              Menubet Hotel Platform
             </motion.p>
 
             {/* Loading bar */}
